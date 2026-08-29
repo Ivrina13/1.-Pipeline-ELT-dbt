@@ -1,0 +1,13 @@
+
+    
+    
+    
+    create table "dev"."main"."product_category_name_translation" ("product_category_name" text,"product_category_name_english" text)
+  ;
+    -- dbt seed --
+    
+          COPY "dev"."main"."product_category_name_translation" FROM 'C:\Users\ivrin\OneDrive\Bureau\pipeline et dashboard\data Brazilian E-Commerce\olist_transform\seeds\product_category_name_translation.csv' (FORMAT CSV, HEADER TRUE, DELIMITER ',')
+        
+
+;
+  

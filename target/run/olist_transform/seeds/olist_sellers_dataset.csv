@@ -1,0 +1,13 @@
+
+    
+    
+    
+    create table "dev"."main"."olist_sellers_dataset" ("seller_id" text,"seller_zip_code_prefix" integer,"seller_city" text,"seller_state" text)
+  ;
+    -- dbt seed --
+    
+          COPY "dev"."main"."olist_sellers_dataset" FROM 'C:\Users\ivrin\OneDrive\Bureau\pipeline et dashboard\data Brazilian E-Commerce\olist_transform\seeds\olist_sellers_dataset.csv' (FORMAT CSV, HEADER TRUE, DELIMITER ',')
+        
+
+;
+  
