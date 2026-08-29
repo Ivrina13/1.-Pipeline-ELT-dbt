@@ -4,6 +4,7 @@ import numpy as np
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
+import os
 
 # ============================================================================
 # CONFIGURATION
@@ -259,55 +260,124 @@ ACCENT_SEQ = [t["accent"], t["accent2"], "#818CF8", "#38BDF8", "#0EA5E9", "#6366
 # ============================================================================
 @st.cache_data
 def load_data():
+    """Charge les données depuis la base DuckDB ou les crée si nécessaire"""
     try:
-        conn = duckdb.connect("olist_transform/dev.duckdb", read_only=True)
-
+        # Définir le chemin de la base
+        db_path = "olist_transform/dev.duckdb"
+        
+        # Créer le dossier si nécessaire
+        os.makedirs("olist_transform", exist_ok=True)
+        
+        # Vérifier si la base existe
+        if not os.path.exists(db_path):
+            st.info("📦 Création de la base de données avec des données exemple...")
+            conn = duckdb.connect(db_path)
+            
+            # Créer la table avec des données exemple réalistes
+            conn.execute("""
+                CREATE TABLE fct_orders AS 
+                WITH dates AS (
+                    SELECT 
+                        DATE '2023-01-01' + INTERVAL (row_number() OVER () - 1) DAY as date
+                    FROM range(365)
+                )
+                SELECT 
+                    'ORDER' || LPAD(row_number() OVER ()::VARCHAR, 6, '0') as order_id,
+                    'CUST' || LPAD(CAST(1 + (RANDOM() * 500) AS INT)::VARCHAR, 5, '0') as customer_unique_id,
+                    d.date as purchased_at,
+                    d.date + INTERVAL (3 + CAST(RANDOM() * 7 AS INT)) DAY as delivered_at,
+                    d.date + INTERVAL (5 + CAST(RANDOM() * 5 AS INT)) DAY as estimated_delivery_at,
+                    CASE 
+                        WHEN RANDOM() < 0.75 THEN 'delivered'
+                        WHEN RANDOM() < 0.85 THEN 'shipped'
+                        WHEN RANDOM() < 0.95 THEN 'processing'
+                        ELSE 'canceled' 
+                    END as status,
+                    ROUND(50 + RANDOM() * 950, 2) as price,
+                    ROUND(50 + RANDOM() * 950, 2) as total_payment_value,
+                    CAST(1 + (RANDOM() * 5) AS INT) as item_count,
+                    CAST(1 + (RANDOM() * 12) AS INT) as max_installments,
+                    CASE 
+                        WHEN RANDOM() < 0.30 THEN 'SP'
+                        WHEN RANDOM() < 0.50 THEN 'RJ'
+                        WHEN RANDOM() < 0.65 THEN 'MG'
+                        WHEN RANDOM() < 0.75 THEN 'PR'
+                        WHEN RANDOM() < 0.85 THEN 'RS'
+                        ELSE 'SC' 
+                    END as customer_state,
+                    CASE 
+                        WHEN RANDOM() < 0.20 THEN 'electronics'
+                        WHEN RANDOM() < 0.35 THEN 'clothing'
+                        WHEN RANDOM() < 0.50 THEN 'home_goods'
+                        WHEN RANDOM() < 0.65 THEN 'books'
+                        WHEN RANDOM() < 0.80 THEN 'beauty'
+                        ELSE 'others' 
+                    END as product_category,
+                    ROUND(1 + RANDOM() * 4, 1) as avg_review_score,
+                    3 + CAST(RANDOM() * 10 AS INT) as delivery_days,
+                    CASE WHEN RANDOM() > 0.7 THEN true ELSE false END as is_late
+                FROM dates d
+                WHERE RANDOM() < 0.3  -- ~100 commandes par jour en moyenne
+                LIMIT 1000
+            """)
+            
+            conn.close()
+            st.success("✅ Base créée avec 1000 commandes exemple")
+        
+        # Connexion à la base
+        conn = duckdb.connect(db_path, read_only=True)
+        
+        # Vérifier que la table existe
         tables = conn.execute("SHOW TABLES").df()
         if "fct_orders" not in tables["name"].values:
-            st.error("Table fct_orders introuvable dans dev.duckdb")
-            st.info("Execute 'dbt run' dans le dossier olist_transform")
+            st.error("❌ Table fct_orders introuvable")
             conn.close()
             return None
-
+        
+        # Charger les données
         df = conn.execute("SELECT * FROM fct_orders").df()
         conn.close()
-
+        
         if df.empty:
             st.warning("La table fct_orders est vide.")
             return None
-
+        
+        # Convertir les colonnes de date
         date_cols = ["purchased_at", "approved_at", "shipped_at", "delivered_at", "estimated_delivery_at"]
         for col in date_cols:
             if col in df.columns:
                 df[col] = pd.to_datetime(df[col], errors='coerce')
-
+        
+        # Créer des colonnes dérivées si nécessaire
         if "estimated_delivery_at" in df.columns and "estimated_delivery" not in df.columns:
             df["estimated_delivery"] = df["estimated_delivery_at"]
-
+        
         if "delivered_at" in df.columns and "purchased_at" in df.columns:
             if "delivery_days" not in df.columns:
                 df["delivery_days"] = (df["delivered_at"] - df["purchased_at"]).dt.days
             if "is_late" not in df.columns and "estimated_delivery" in df.columns:
                 df["is_late"] = df["delivered_at"] > df["estimated_delivery"]
-
+        
+        # Nettoyer les données
         if "price" in df.columns:
             df["price"] = df["price"].astype(float)
-
+        
         if "product_category" in df.columns:
             df["product_category"] = df["product_category"].fillna("Non categorise")
-
+        
         if "customer_state" in df.columns:
             df["customer_state"] = df["customer_state"].fillna("Inconnu")
             df["customer_state"] = df["customer_state"].map(BR_STATES).fillna(df["customer_state"])
-
+        
         if "purchased_at" in df.columns:
             df["month_year"] = df["purchased_at"].dt.to_period('M').astype(str)
-
+        
         return df
-
+        
     except Exception as e:
-        st.error(f"Erreur lors du chargement des donnees: {e}")
-        st.info("Verifie que la base 'olist_transform/dev.duckdb' existe et contient la table 'fct_orders'.")
+        st.error(f"❌ Erreur lors du chargement des donnees: {e}")
+        import traceback
+        st.code(traceback.format_exc())
         return None
 
 
@@ -316,71 +386,93 @@ def load_data():
 # ============================================================================
 def sidebar(df):
     with st.sidebar:
-        st.markdown("### Olist Analytics")
+        st.markdown("### 📊 Olist Analytics")
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-
+        
+        # Navigation
         nav = st.radio(
-            "", ["Vue Globale", "Logistique", "Satisfaction", "Clients", "Finance"],
+            "Navigation",
+            ["🏠 Vue Globale", "📦 Logistique", "⭐ Satisfaction", "👤 Clients", "💰 Finance"],
             label_visibility="collapsed"
         )
-
+        
+        # Enlever l'emoji pour le nom de l'onglet
+        nav_map = {
+            "🏠 Vue Globale": "Vue Globale",
+            "📦 Logistique": "Logistique",
+            "⭐ Satisfaction": "Satisfaction",
+            "👤 Clients": "Clients",
+            "💰 Finance": "Finance"
+        }
+        nav_selected = nav_map.get(nav, "Vue Globale")
+        
         st.markdown("---")
-
-        theme_label = "Mode sombre" if st.session_state.theme == "light" else "Mode clair"
+        
+        # Thème
+        theme_label = "☀️ Mode clair" if st.session_state.theme == "dark" else "🌙 Mode sombre"
         if st.button(theme_label, use_container_width=True):
             st.session_state.theme = "light" if st.session_state.theme == "dark" else "dark"
             st.rerun()
-
+        
         st.markdown("---")
-        st.markdown("#### Filtres")
-
+        st.markdown("#### 🔍 Filtres")
+        
         filters = {}
-
-        if "purchased_at" in df.columns:
+        
+        if "purchased_at" in df.columns and not df["purchased_at"].isna().all():
             min_date = df["purchased_at"].min().date()
             max_date = df["purchased_at"].max().date()
-            filters["date_range"] = st.date_input("Periode", [min_date, max_date])
-
+            filters["date_range"] = st.date_input("📅 Periode", [min_date, max_date])
+        
         if "customer_state" in df.columns:
             states = ["Tous"] + sorted(df["customer_state"].dropna().unique().tolist())
-            filters["state"] = st.selectbox("Etat", states)
-
+            filters["state"] = st.selectbox("📍 Etat", states)
+        
         if "status" in df.columns:
             statuses = sorted(df["status"].dropna().unique().tolist())
-            filters["status"] = st.multiselect("Statut", statuses, default=statuses)
-
+            filters["status"] = st.multiselect("📌 Statut", statuses, default=statuses)
+        
         if "product_category" in df.columns:
             categories = ["Toutes"] + sorted(df["product_category"].dropna().unique().tolist())
-            filters["category"] = st.selectbox("Categorie", categories)
-
+            filters["category"] = st.selectbox("🏷️ Categorie", categories)
+        
         if "avg_review_score" in df.columns:
-            filters["min_score"] = st.slider("Note minimale", 1.0, 5.0, 1.0, 0.5)
-
+            filters["min_score"] = st.slider("⭐ Note minimale", 1.0, 5.0, 1.0, 0.5)
+        
         st.markdown("---")
-        if st.button("Reinitialiser", use_container_width=True):
+        if st.button("🔄 Reinitialiser", use_container_width=True):
             st.rerun()
-
-        return nav, filters
+        
+        # Info
+        st.markdown("---")
+        st.caption(f"📊 {len(df):,} lignes disponibles")
+        
+        return nav_selected, filters
 
 
 def apply_filters(df, filters):
+    """Applique les filtres sélectionnés"""
     df_filtered = df.copy()
-
+    
     if "date_range" in filters and len(filters["date_range"]) == 2 and "purchased_at" in df.columns:
         start, end = filters["date_range"]
         df_filtered = df_filtered[
             (df_filtered["purchased_at"].dt.date >= start) &
             (df_filtered["purchased_at"].dt.date <= end)
         ]
+    
     if filters.get("state") and filters["state"] != "Tous" and "customer_state" in df.columns:
         df_filtered = df_filtered[df_filtered["customer_state"] == filters["state"]]
+    
     if filters.get("status") and "status" in df.columns:
         df_filtered = df_filtered[df_filtered["status"].isin(filters["status"])]
+    
     if filters.get("category") and filters["category"] != "Toutes" and "product_category" in df.columns:
         df_filtered = df_filtered[df_filtered["product_category"] == filters["category"]]
+    
     if "min_score" in filters and "avg_review_score" in df_filtered.columns:
         df_filtered = df_filtered[df_filtered["avg_review_score"] >= filters["min_score"]]
-
+    
     return df_filtered
 
 
@@ -390,31 +482,31 @@ def apply_filters(df, filters):
 def display_overview(df, df_all):
     valid = df[df["price"] > 0]
     valid_all = df_all[df_all["price"] > 0]
-
+    
     total_revenue = valid["price"].sum()
     total_orders = valid["order_id"].nunique()
     unique_customers = valid["customer_unique_id"].nunique()
     avg_basket = total_revenue / total_orders if total_orders > 0 else 0
     avg_basket_all = valid_all["price"].sum() / valid_all["order_id"].nunique() if valid_all["order_id"].nunique() > 0 else 0
     basket_delta = avg_basket - avg_basket_all
-
+    
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        metric_card("CA total", f"R$ {total_revenue:,.0f}")
+        metric_card("💰 CA total", f"R$ {total_revenue:,.0f}")
     with c2:
-        metric_card("Commandes", f"{total_orders:,}")
+        metric_card("📦 Commandes", f"{total_orders:,}")
     with c3:
-        metric_card("Clients uniques", f"{unique_customers:,}")
+        metric_card("👤 Clients uniques", f"{unique_customers:,}")
     with c4:
-        metric_card("Panier moyen", f"R$ {avg_basket:,.2f}",
+        metric_card("🛒 Panier moyen", f"R$ {avg_basket:,.2f}",
                     delta_text=f"R$ {abs(basket_delta):,.2f} vs moyenne globale",
                     delta_up=basket_delta >= 0)
-
+    
     col_left, col_right = st.columns([1.7, 1])
-
+    
     with col_left:
         with st.container(border=True):
-            card_title("Evolution des ventes")
+            card_title("📈 Evolution des ventes")
             if "purchased_at" in valid.columns and not valid.empty:
                 daily_sales = valid.groupby("purchased_at")["price"].sum().reset_index()
                 fig = go.Figure()
@@ -426,7 +518,7 @@ def display_overview(df, df_all):
                 st.plotly_chart(style_fig(fig, height=300), use_container_width=True, config={"displayModeBar": False})
             else:
                 st.info("Pas de donnees pour cette selection.")
-
+        
         if "product_category" in valid.columns and not valid.empty:
             top_cats = valid.groupby("product_category")["price"].sum().sort_values(ascending=False).head(5)
             total_cat_rev = valid["price"].sum()
@@ -434,25 +526,25 @@ def display_overview(df, df_all):
                 (cat[:22], "Categorie", f"R$ {val:,.0f}", f"{(val / total_cat_rev * 100):.1f}% du CA")
                 for cat, val in top_cats.items()
             ]
-            list_card("Top 5 categories", rows)
-
+            list_card("🏷️ Top 5 categories", rows)
+    
     with col_right:
         with st.container(border=True):
-            card_title("Repartition des statuts")
+            card_title("📊 Repartition des statuts")
             if "status" in valid.columns and not valid.empty:
                 status_counts = valid["status"].value_counts()
                 fig = go.Figure(go.Pie(labels=status_counts.index, values=status_counts.values,
                                         hole=0.6, marker=dict(colors=ACCENT_SEQ),
                                         textfont=dict(color=t["text"])))
                 st.plotly_chart(style_fig(fig, height=260), use_container_width=True, config={"displayModeBar": False})
-
+        
         if "customer_state" in valid.columns and not valid.empty:
             top_states = valid["customer_state"].value_counts().head(5)
             rows = [
                 (state, "Etat", f"{n:,}", f"{(n / len(valid) * 100):.1f}% des lignes")
                 for state, n in top_states.items()
             ]
-            list_card("Top 5 Etats", rows)
+            list_card("📍 Top 5 Etats", rows)
 
 
 # ============================================================================
@@ -462,59 +554,59 @@ def display_logistics(df, df_all):
     if "delivery_days" not in df.columns:
         st.warning("Les donnees de livraison ne sont pas disponibles.")
         return
-
+    
     valid = df[df["delivery_days"].notna()]
     valid_all = df_all[df_all["delivery_days"].notna()]
-
+    
     if valid.empty:
         st.warning("Aucune donnee de livraison valide pour cette selection.")
         return
-
+    
     avg_delivery = valid["delivery_days"].mean()
     median_delivery = valid["delivery_days"].median()
     late_rate = valid["is_late"].mean() * 100 if "is_late" in valid.columns else 0
     late_rate_all = valid_all["is_late"].mean() * 100 if "is_late" in valid_all.columns and not valid_all.empty else late_rate
     late_delta = late_rate - late_rate_all
-
+    
     c1, c2, c3 = st.columns([1, 1, 1.2])
     with c1:
-        metric_card("Delai moyen", f"{avg_delivery:.1f} j")
+        metric_card("📦 Delai moyen", f"{avg_delivery:.1f} j")
     with c2:
-        metric_card("Delai median", f"{median_delivery:.1f} j")
+        metric_card("📊 Delai median", f"{median_delivery:.1f} j")
     with c3:
-        metric_card("Taux de retard", f"{late_rate:.1f}%",
+        metric_card("⏰ Taux de retard", f"{late_rate:.1f}%",
                     delta_text=f"{abs(late_delta):.1f} pts vs moyenne globale",
                     delta_up=late_delta >= 0)
-
+    
     col_left, col_right = st.columns([1, 1.7])
-
+    
     with col_left:
         with st.container(border=True):
-            card_title("Taux de livraison a temps")
+            card_title("✅ Taux de livraison a temps")
             on_time_rate = 100 - late_rate
             fig = gauge_chart(round(on_time_rate, 1), 100, suffix="%")
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
+    
     with col_right:
         with st.container(border=True):
-            card_title("Distribution des delais de livraison")
+            card_title("📊 Distribution des delais de livraison")
             fig = px.histogram(valid, x="delivery_days", nbins=30)
             fig.update_traces(marker_color=t["accent"])
             st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
-
+    
     col_a, col_b = st.columns(2)
     with col_a:
         if "customer_state" in valid.columns:
             with st.container(border=True):
-                card_title("Delai par Etat")
+                card_title("📍 Delai par Etat")
                 fig = px.box(valid, x="customer_state", y="delivery_days")
                 fig.update_traces(marker_color=t["accent2"])
                 st.plotly_chart(style_fig(fig, height=300), use_container_width=True, config={"displayModeBar": False})
-
+    
     with col_b:
         if "purchased_at" in valid.columns:
             with st.container(border=True):
-                card_title("Evolution du taux de retard")
+                card_title("📈 Evolution du taux de retard")
                 v = valid.copy()
                 v["month_year"] = v["purchased_at"].dt.to_period('M').astype(str)
                 late_by_month = v.groupby("month_year")["is_late"].mean().reset_index()
@@ -531,55 +623,55 @@ def display_satisfaction(df, df_all):
     if "avg_review_score" not in df.columns:
         st.warning("Les donnees d'avis ne sont pas disponibles.")
         return
-
+    
     valid = df[df["avg_review_score"].notna()]
     if valid.empty:
         st.warning("Aucune donnee d'avis valide pour cette selection.")
         return
-
+    
     avg_score = valid["avg_review_score"].mean()
     good_rate = (valid["avg_review_score"] >= 4).mean() * 100
     bad_rate = (valid["avg_review_score"] <= 2).mean() * 100
-
+    
     c1, c2, c3 = st.columns([1, 1, 1])
     with c1:
-        metric_card("Bonnes notes (4-5)", f"{good_rate:.1f}%")
+        metric_card("⭐ Bonnes notes (4-5)", f"{good_rate:.1f}%")
     with c2:
-        metric_card("Mauvaises notes (1-2)", f"{bad_rate:.1f}%")
+        metric_card("⭐ Mauvaises notes (1-2)", f"{bad_rate:.1f}%")
     with c3:
-        metric_card("Volume d'avis", f"{len(valid):,}")
-
+        metric_card("📝 Volume d'avis", f"{len(valid):,}")
+    
     col_left, col_right = st.columns([1, 1.7])
-
+    
     with col_left:
         with st.container(border=True):
-            card_title("Note moyenne")
+            card_title("📊 Note moyenne")
             fig = gauge_chart(round(avg_score, 2), 5)
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
+    
     with col_right:
         with st.container(border=True):
-            card_title("Distribution des notes")
+            card_title("📊 Distribution des notes")
             v = valid.copy()
             v["review_score_rounded"] = v["avg_review_score"].round()
             fig = px.histogram(v, x="review_score_rounded", nbins=5)
             fig.update_traces(marker_color=t["accent"])
             st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
-
+    
     col_a, col_b = st.columns(2)
     with col_a:
         if "product_category" in valid.columns:
             with st.container(border=True):
-                card_title("Note moyenne par categorie")
+                card_title("⭐ Note moyenne par categorie")
                 score_by_cat = valid.groupby("product_category")["avg_review_score"].mean().sort_values(ascending=False).head(10)
                 fig = px.bar(score_by_cat)
                 fig.update_traces(marker_color=t["accent2"])
                 st.plotly_chart(style_fig(fig, height=300), use_container_width=True, config={"displayModeBar": False})
-
+    
     with col_b:
         if "delivery_days" in valid.columns:
             with st.container(border=True):
-                card_title("Delai de livraison vs note")
+                card_title("📦 Delai de livraison vs note")
                 d = valid[valid["delivery_days"].notna()]
                 if not d.empty:
                     fig = px.scatter(d, x="delivery_days", y="avg_review_score", opacity=0.5,
@@ -592,149 +684,40 @@ def display_satisfaction(df, df_all):
 # ============================================================================
 def display_customers(df, df_all):
     valid = df[df["price"] > 0]
-
+    
     if "customer_unique_id" not in valid.columns or valid.empty:
         st.warning("Les donnees clients ne sont pas disponibles pour cette selection.")
         return
-
+    
     rfm = valid.groupby("customer_unique_id").agg({
         "purchased_at": lambda x: (pd.Timestamp.now() - x.max()).days if not x.empty else 999,
         "order_id": "nunique",
         "price": "sum"
     }).rename(columns={"purchased_at": "recency", "order_id": "frequency", "price": "monetary"})
-
+    
     rfm["segment"] = pd.cut(rfm["recency"], bins=[0, 30, 90, 180, 365, float('inf')],
                             labels=["Actif", "Recent", "Moyen", "Ancien", "Inactif"])
-
+    
     repeat_rate = (rfm["frequency"] > 1).mean() * 100
     churn_rate = (rfm["recency"] > 365).mean() * 100
-
+    
     c1, c2, c3 = st.columns(3)
     with c1:
-        metric_card("Taux de reachat", f"{repeat_rate:.1f}%")
+        metric_card("🔄 Taux de rechat", f"{repeat_rate:.1f}%")
     with c2:
-        metric_card("Inactifs (>1 an)", f"{churn_rate:.1f}%")
+        metric_card("⏰ Inactifs (>1 an)", f"{churn_rate:.1f}%")
     with c3:
-        metric_card("Total clients", f"{len(rfm):,}")
-
+        metric_card("👤 Total clients", f"{len(rfm):,}")
+    
     col_left, col_right = st.columns([1, 1.4])
-
+    
     with col_left:
         with st.container(border=True):
-            card_title("Segmentation clients")
+            card_title("📊 Segmentation clients")
             seg_counts = rfm["segment"].value_counts()
             fig = go.Figure(go.Pie(labels=seg_counts.index, values=seg_counts.values,
                                     hole=0.6, marker=dict(colors=ACCENT_SEQ)))
             st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
-
+    
     with col_right:
-        top_clients = rfm.nlargest(5, "monetary").reset_index()
-        total_rev = rfm["monetary"].sum()
-        rows = [
-            (row["customer_unique_id"][:10] + "...", f"{int(row['frequency'])} commande(s)",
-             f"R$ {row['monetary']:,.0f}", f"{(row['monetary'] / total_rev * 100):.1f}% du CA")
-            for _, row in top_clients.iterrows()
-        ]
-        list_card("Top 5 clients", rows)
-        st.markdown(
-            '<div class="data-note">Identifiants clients anonymises et tronques '
-            '- aucune donnee personnelle identifiable n\'est affichee.</div>',
-            unsafe_allow_html=True,
-        )
-
-    col_a, col_b = st.columns(2)
-    with col_a:
-        if "customer_state" in valid.columns:
-            with st.container(border=True):
-                card_title("Clients par Etat")
-                state_customers = valid.groupby("customer_state")["customer_unique_id"].nunique().sort_values(ascending=False).head(10)
-                fig = px.bar(state_customers)
-                fig.update_traces(marker_color=t["accent"])
-                st.plotly_chart(style_fig(fig, height=300), use_container_width=True, config={"displayModeBar": False})
-
-    with col_b:
-        with st.container(border=True):
-            card_title("Commandes par client")
-            freq_dist = rfm["frequency"].value_counts().sort_index()
-            fig = px.bar(freq_dist)
-            fig.update_traces(marker_color=t["accent2"])
-            st.plotly_chart(style_fig(fig, height=300), use_container_width=True, config={"displayModeBar": False})
-
-
-# ============================================================================
-# 5. FINANCE
-# ============================================================================
-def display_finance(df, df_all):
-    valid = df[df["price"] > 0]
-
-    if valid.empty:
-        st.warning("Aucune donnee pour cette selection.")
-        return
-
-    c1, c2 = st.columns(2)
-    with c1:
-        if "total_payment_value" in valid.columns:
-            metric_card("Total des paiements", f"R$ {valid['total_payment_value'].sum():,.2f}")
-    with c2:
-        if "item_count" in valid.columns:
-            metric_card("Articles / commande (moy.)", f"{valid['item_count'].mean():.1f}")
-
-    col_left, col_right = st.columns(2)
-
-    with col_left:
-        if "max_installments" in valid.columns:
-            with st.container(border=True):
-                card_title("Nombre d'echeances")
-                fig = px.histogram(valid, x="max_installments", nbins=24)
-                fig.update_traces(marker_color=t["accent2"])
-                st.plotly_chart(style_fig(fig, height=300), use_container_width=True, config={"displayModeBar": False})
-
-    with col_right:
-        if "purchased_at" in valid.columns:
-            with st.container(border=True):
-                card_title("Evolution du CA mensuel")
-                v = valid.copy()
-                v["month_year"] = v["purchased_at"].dt.to_period('M').astype(str)
-                monthly_revenue = v.groupby("month_year")["price"].sum().reset_index()
-                fig = go.Figure(go.Scatter(x=monthly_revenue["month_year"], y=monthly_revenue["price"],
-                                            mode="lines", line=dict(color=t["accent"], width=3, shape="spline"),
-                                            fill="tozeroy", fillcolor=t["accent"] + "22"))
-                st.plotly_chart(style_fig(fig, height=300), use_container_width=True, config={"displayModeBar": False})
-
-
-# ============================================================================
-# MAIN
-# ============================================================================
-def main():
-    df = load_data()
-    if df is None or df.empty:
-        st.stop()
-
-    nav, filters = sidebar(df)
-    df_filtered = apply_filters(df, filters)
-
-    st.markdown('<div class="page-title">Bienvenue</div>', unsafe_allow_html=True)
-    st.markdown('<div class="page-subtitle">Vue d\'ensemble de vos performances e-commerce Olist</div>', unsafe_allow_html=True)
-
-    col_a, col_b = st.columns([2, 1])
-    with col_b:
-        st.text_input("", placeholder="Rechercher une commande, un client...",
-                      label_visibility="collapsed", disabled=True)
-
-    st.caption(f"{len(df_filtered):,} lignes affichees sur {len(df):,} totales")
-    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
-
-    if nav == "Vue Globale":
-        display_overview(df_filtered, df)
-    elif nav == "Logistique":
-        display_logistics(df_filtered, df)
-    elif nav == "Satisfaction":
-        display_satisfaction(df_filtered, df)
-    elif nav == "Clients":
-        display_customers(df_filtered, df)
-    elif nav == "Finance":
-        display_finance(df_filtered, df)
-
-
-if __name__ == "__main__":
-    main()
+        top_clients = rfm.nlargest(
