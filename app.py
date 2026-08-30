@@ -803,13 +803,13 @@ def display_overview(df, df_all):
             if "status" in valid.columns and not valid.empty:
                 status_counts = valid["status"].value_counts()
                 fig = go.Figure(go.Pie(
-                    labels=status_counts.index,
-                    values=status_counts.values,
-                    hole=0.5,
-                    marker=dict(colors=[COLORS["accent"], COLORS["accent2"], COLORS["primary_light"], COLORS["positive"]]),
-                    textfont=
-                                        textfont=dict(color=theme["text"])
-                ))
+    labels=cat_rev.index,
+    values=cat_rev.values,
+    hole=0.5,
+    marker=dict(colors=[COLORS["accent"], COLORS["accent2"], COLORS["primary_light"],
+                        COLORS["positive"], COLORS["negative"], "#8A7A5A"]),
+    textfont=dict(color=theme["text"])
+))
                 st.plotly_chart(style_fig(fig, height=240), use_container_width=True, config={"displayModeBar": False})
 
         if "customer_state" in valid.columns and not valid.empty:
