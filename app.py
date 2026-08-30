@@ -701,6 +701,39 @@ def load_brazil_geojson():
         return None
 
 
+def _build_choropleth(data, geojson, color_col, color_scale, style, labels, hover_data):
+    """Construit la carte choroplèthe en s'adaptant à la version de Plotly installée :
+    Plotly >= 6 a renommé choropleth_mapbox en choropleth_map (map_style au lieu de mapbox_style)."""
+    kwargs = dict(
+        data_frame=data, geojson=geojson, locations="customer_state",
+        featureidkey="properties.name", color=color_col,
+        color_continuous_scale=color_scale, zoom=2.6,
+        center={"lat": -14.2, "lon": -51.9}, opacity=0.85,
+        labels=labels, hover_data=hover_data,
+    )
+    if hasattr(px, "choropleth_map"):
+        kwargs["map_style"] = style
+        return px.choropleth_map(**kwargs)
+    kwargs["mapbox_style"] = style
+    return px.choropleth_mapbox(**kwargs)
+
+
+def _build_scatter_map(data, lat_c, lon_c, color_col, color_scale, style):
+    """Construit la carte de points en s'adaptant à la version de Plotly installée."""
+    kwargs = dict(
+        data_frame=data, lat=lat_c, lon=lon_c, zoom=2.6,
+        center={"lat": -14.2, "lon": -51.9}, opacity=0.55,
+    )
+    if color_col:
+        kwargs["color"] = color_col
+        kwargs["color_continuous_scale"] = color_scale
+    if hasattr(px, "scatter_map"):
+        kwargs["map_style"] = style
+        return px.scatter_map(**kwargs)
+    kwargs["mapbox_style"] = style
+    return px.scatter_mapbox(**kwargs)
+
+
 def find_latlon_cols(df):
     """Cherche des colonnes lat/lon parmi les noms usuels du dataset Olist."""
     candidates = [
@@ -1010,46 +1043,51 @@ def display_geo(df, df_all):
     mapbox_style = "carto-darkmatter" if st.session_state.theme == "dark" else "carto-positron"
 
     with st.container(border=True):
+        map_rendered = False
         if view == t("geo_view_choropleth"):
             geojson = load_brazil_geojson()
-            if geojson is None:
-                fig = px.bar(state_agg_sorted, x="customer_state", y="revenue")
-                fig.update_traces(marker_color=COLORS["accent"])
-                st.plotly_chart(style_fig(fig, height=420), use_container_width=True, config={"displayModeBar": False})
-                st.caption(t("geo_fallback_note"))
-            else:
-                fig = px.choropleth_mapbox(
-                    state_agg, geojson=geojson, locations="customer_state",
-                    featureidkey="properties.name", color="revenue",
-                    color_continuous_scale=[theme["surface"], COLORS["accent"]],
-                    mapbox_style=mapbox_style, zoom=2.6,
-                    center={"lat": -14.2, "lon": -51.9}, opacity=0.85,
-                    labels={"revenue": "CA (R$)" if has_revenue else "Commandes"},
-                    hover_data={"orders": True, "revenue": ":.0f"},
+            if geojson is not None:
+                try:
+                    fig = _build_choropleth(
+                        state_agg, geojson, "revenue",
+                        [theme["surface"], COLORS["accent"]], mapbox_style,
+                        labels={"revenue": "CA (R$)" if has_revenue else "Commandes"},
+                        hover_data={"orders": True, "revenue": ":.0f"},
+                    )
+                    fig.update_layout(
+                        margin=dict(l=0, r=0, t=0, b=0), height=460,
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        font=dict(color=theme["text"]),
+                    )
+                    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+                    map_rendered = True
+                except Exception:
+                    map_rendered = False
+        else:
+            lat_c, lon_c = latlon
+            pts = valid.dropna(subset=[lat_c, lon_c])
+            try:
+                fig = _build_scatter_map(
+                    pts, lat_c, lon_c,
+                    "price" if has_revenue else None,
+                    [theme["surface"], COLORS["accent"]], mapbox_style,
                 )
+                fig.update_traces(marker=dict(size=5))
                 fig.update_layout(
                     margin=dict(l=0, r=0, t=0, b=0), height=460,
                     paper_bgcolor="rgba(0,0,0,0)",
                     font=dict(color=theme["text"]),
                 )
                 st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-        else:
-            lat_c, lon_c = latlon
-            pts = valid.dropna(subset=[lat_c, lon_c])
-            fig = px.scatter_mapbox(
-                pts, lat=lat_c, lon=lon_c,
-                color="price" if has_revenue else None,
-                color_continuous_scale=[theme["surface"], COLORS["accent"]],
-                zoom=2.6, center={"lat": -14.2, "lon": -51.9}, opacity=0.55,
-                mapbox_style=mapbox_style,
-            )
-            fig.update_traces(marker=dict(size=5))
-            fig.update_layout(
-                margin=dict(l=0, r=0, t=0, b=0), height=460,
-                paper_bgcolor="rgba(0,0,0,0)",
-                font=dict(color=theme["text"]),
-            )
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+                map_rendered = True
+            except Exception:
+                map_rendered = False
+
+        if not map_rendered:
+            fig = px.bar(state_agg_sorted, x="customer_state", y="revenue")
+            fig.update_traces(marker_color=COLORS["accent"])
+            st.plotly_chart(style_fig(fig, height=420), use_container_width=True, config={"displayModeBar": False})
+            st.caption(t("geo_fallback_note"))
 
     with st.container(border=True):
         st.markdown(f'<div class="card-title">{t("geo_table_title")}</div>', unsafe_allow_html=True)
