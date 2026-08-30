@@ -808,3 +808,435 @@ def display_overview(df, df_all):
                     hole=0.5,
                     marker=dict(colors=[COLORS["accent"], COLORS["accent2"], COLORS["primary_light"], COLORS["positive"]]),
                     textfont=
+                                        textfont=dict(color=theme["text"])
+                ))
+                st.plotly_chart(style_fig(fig, height=240), use_container_width=True, config={"displayModeBar": False})
+
+        if "customer_state" in valid.columns and not valid.empty:
+            with st.container(border=True):
+                st.markdown(f'<div class="card-title">{t("chart_states")}</div>', unsafe_allow_html=True)
+                top_states = valid["customer_state"].value_counts().head(5)
+                fig = go.Figure(go.Bar(
+                    x=top_states.index,
+                    y=top_states.values,
+                    marker_color=COLORS["accent2"]
+                ))
+                st.plotly_chart(style_fig(fig, height=200), use_container_width=True, config={"displayModeBar": False})
+
+
+# ============================================================================
+# SECTION: LOGISTICS
+# ============================================================================
+def display_logistics(df, df_all):
+    if "delivery_days" not in df.columns:
+        st.warning("Les données de livraison ne sont pas disponibles.")
+        return
+
+    valid = df[df["delivery_days"].notna()]
+    valid_all = df_all[df_all["delivery_days"].notna()]
+
+    if valid.empty:
+        st.warning("Aucune donnée de livraison valide pour cette sélection.")
+        return
+
+    avg_delivery = valid["delivery_days"].mean()
+    median_delivery = valid["delivery_days"].median()
+    late_rate = valid["is_late"].mean() * 100 if "is_late" in valid.columns else 0
+    late_rate_all = valid_all["is_late"].mean() * 100 if "is_late" in valid_all.columns and not valid_all.empty else late_rate
+    late_delta = late_rate - late_rate_all
+
+    c1, c2, c3 = st.columns([1, 1, 1.2])
+    with c1:
+        metric_card(t("kpi_avg_delivery"), f"{avg_delivery:.1f} j", featured=True)
+    with c2:
+        metric_card(t("kpi_median_delivery"), f"{median_delivery:.1f} j")
+    with c3:
+        metric_card(t("kpi_late_rate"), f"{late_rate:.1f}%",
+                    delta_text=f"{abs(late_delta):.1f} pts vs avg", delta_up=late_delta < 0)
+
+    col_left, col_right = st.columns([1, 1.6])
+
+    with col_left:
+        with st.container(border=True):
+            st.markdown(f'<div class="card-title">{t("chart_delivery_dist")}</div>', unsafe_allow_html=True)
+            fig = px.histogram(valid, x="delivery_days", nbins=25)
+            fig.update_traces(marker_color=COLORS["accent"])
+            st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
+
+    with col_right:
+        with st.container(border=True):
+            st.markdown(f'<div class="card-title">{t("chart_late_trend")}</div>', unsafe_allow_html=True)
+            if "purchased_at" in valid.columns:
+                v = valid.copy()
+                v["month_year"] = v["purchased_at"].dt.to_period('M').astype(str)
+                late_by_month = v.groupby("month_year")["is_late"].mean().reset_index()
+                late_by_month["is_late"] = late_by_month["is_late"] * 100
+                fig = go.Figure(go.Scatter(
+                    x=late_by_month["month_year"],
+                    y=late_by_month["is_late"],
+                    mode="lines+markers",
+                    line=dict(color=COLORS["accent2"], width=2.5),
+                    marker=dict(color=COLORS["accent2"], size=6)
+                ))
+                st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
+
+    if "customer_state" in valid.columns:
+        with st.container(border=True):
+            st.markdown(f'<div class="card-title">{t("chart_delivery_state")}</div>', unsafe_allow_html=True)
+            fig = px.box(valid, x="customer_state", y="delivery_days")
+            fig.update_traces(marker_color=COLORS["accent2"])
+            st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
+
+
+# ============================================================================
+# SECTION: SATISFACTION
+# ============================================================================
+def display_satisfaction(df, df_all):
+    if "avg_review_score" not in df.columns:
+        st.warning("Les données d'avis ne sont pas disponibles.")
+        return
+
+    valid = df[df["avg_review_score"].notna()]
+    if valid.empty:
+        st.warning("Aucune donnée d'avis valide pour cette sélection.")
+        return
+
+    avg_score = valid["avg_review_score"].mean()
+    good_rate = (valid["avg_review_score"] >= 4).mean() * 100
+    bad_rate = (valid["avg_review_score"] <= 2).mean() * 100
+
+    c1, c2, c3 = st.columns([1, 1, 1])
+    with c1:
+        metric_card(t("kpi_good_reviews"), f"{good_rate:.1f}%", featured=True)
+    with c2:
+        metric_card(t("kpi_bad_reviews"), f"{bad_rate:.1f}%")
+    with c3:
+        metric_card(t("kpi_review_count"), f"{len(valid):,}")
+
+    col_left, col_right = st.columns([1, 1.6])
+
+    with col_left:
+        with st.container(border=True):
+            st.markdown(f'<div class="card-title">{t("kpi_avg_score")}</div>', unsafe_allow_html=True)
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=round(avg_score, 2),
+                number={'suffix': "/5", 'font': {'color': theme["text"], 'size': 28}},
+                gauge={
+                    'axis': {'range': [0, 5], 'tickcolor': theme["muted"]},
+                    'bar': {'color': COLORS["accent"]},
+                    'bgcolor': theme["card"],
+                    'borderwidth': 0,
+                }
+            ))
+            fig.update_layout(height=220, margin=dict(l=10, r=10, t=10, b=10))
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+    with col_right:
+        with st.container(border=True):
+            st.markdown(f'<div class="card-title">{t("chart_score_dist")}</div>', unsafe_allow_html=True)
+            v = valid.copy()
+            v["review_score_rounded"] = v["avg_review_score"].round()
+            fig = px.histogram(v, x="review_score_rounded", nbins=5)
+            fig.update_traces(marker_color=COLORS["accent"])
+            st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
+
+    col_a, col_b = st.columns(2)
+    with col_a:
+        if "product_category" in valid.columns:
+            with st.container(border=True):
+                st.markdown(f'<div class="card-title">{t("chart_score_category")}</div>', unsafe_allow_html=True)
+                score_by_cat = valid.groupby("product_category")["avg_review_score"].mean().sort_values(ascending=False).head(8)
+                fig = px.bar(x=score_by_cat.values, y=score_by_cat.index, orientation="h")
+                fig.update_traces(marker_color=COLORS["accent2"])
+                st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
+
+    with col_b:
+        if "delivery_days" in valid.columns:
+            with st.container(border=True):
+                st.markdown(f'<div class="card-title">{t("chart_delivery_score")}</div>', unsafe_allow_html=True)
+                d = valid[valid["delivery_days"].notna()]
+                if not d.empty:
+                    fig = px.scatter(d, x="delivery_days", y="avg_review_score", opacity=0.4)
+                    fig.update_traces(marker_color=COLORS["accent"], marker_size=5)
+                    st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
+
+
+# ============================================================================
+# SECTION: CUSTOMERS
+# ============================================================================
+def display_customers(df, df_all):
+    valid = df[df["price"] > 0]
+
+    if "customer_unique_id" not in valid.columns or valid.empty:
+        st.warning("Les données clients ne sont pas disponibles pour cette sélection.")
+        return
+
+    rfm = valid.groupby("customer_unique_id").agg({
+        "purchased_at": lambda x: (pd.Timestamp.now() - x.max()).days if not x.empty else 999,
+        "order_id": "nunique",
+        "price": "sum"
+    }).rename(columns={"purchased_at": "recency", "order_id": "frequency", "price": "monetary"})
+
+    rfm["segment"] = pd.cut(rfm["recency"], bins=[0, 30, 90, 180, 365, float('inf')],
+                            labels=["Actif", "Recent", "Moyen", "Ancien", "Inactif"])
+
+    repeat_rate = (rfm["frequency"] > 1).mean() * 100
+    churn_rate = (rfm["recency"] > 365).mean() * 100
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        metric_card(t("kpi_repeat_rate"), f"{repeat_rate:.1f}%", featured=True)
+    with c2:
+        metric_card(t("kpi_churn_rate"), f"{churn_rate:.1f}%")
+    with c3:
+        metric_card(t("kpi_total_customers"), f"{len(rfm):,}")
+
+    col_left, col_right = st.columns([1, 1.4])
+
+    with col_left:
+        with st.container(border=True):
+            st.markdown(f'<div class="card-title">{t("chart_segments")}</div>', unsafe_allow_html=True)
+            seg_counts = rfm["segment"].value_counts()
+            fig = go.Figure(go.Pie(
+                labels=seg_counts.index,
+                values=seg_counts.values,
+                hole=0.5,
+                marker=dict(colors=[COLORS["accent"], COLORS["accent2"], COLORS["primary_light"], COLORS["positive"], COLORS["negative"]]),
+                textfont=dict(color=theme["text"])
+            ))
+            st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
+
+    with col_right:
+        with st.container(border=True):
+            st.markdown(f'<div class="card-title">{t("chart_top_clients")}</div>', unsafe_allow_html=True)
+            top_clients = rfm.nlargest(8, "monetary")
+            fig = go.Figure(go.Bar(
+                x=top_clients.index.str[:12],
+                y=top_clients["monetary"],
+                marker_color=COLORS["accent"],
+                text=[f"R$ {v:,.0f}" for v in top_clients["monetary"]],
+                textposition="outside"
+            ))
+            fig.update_layout(height=280)
+            st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
+
+
+# ============================================================================
+# SECTION: FINANCE
+# ============================================================================
+def display_finance(df, df_all):
+    valid = df[df["price"] > 0]
+    if valid.empty:
+        st.warning("Aucune donnée financière pour cette sélection.")
+        return
+
+    total_revenue = valid["price"].sum()
+    total_payment = valid["total_payment_value"].sum() if "total_payment_value" in valid.columns else total_revenue
+    n_orders = valid["order_id"].nunique()
+    avg_installments = valid["max_installments"].mean() if "max_installments" in valid.columns else None
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        metric_card(t("kpi_revenue"), f"R$ {total_revenue:,.0f}", featured=True)
+    with c2:
+        metric_card("Total encaissé", f"R$ {total_payment:,.0f}")
+    with c3:
+        if avg_installments is not None:
+            metric_card("Versements moyens", f"{avg_installments:.1f}x")
+        else:
+            metric_card(t("kpi_orders"), f"{n_orders:,}")
+
+    col_left, col_right = st.columns([1.6, 1])
+
+    with col_left:
+        with st.container(border=True):
+            st.markdown(f'<div class="card-title">{t("chart_revenue_cum")}</div>', unsafe_allow_html=True)
+            if "purchased_at" in valid.columns:
+                monthly = valid.groupby("month_year")["price"].sum().reset_index().sort_values("month_year")
+                monthly["cumulative"] = monthly["price"].cumsum()
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(
+                    x=monthly["month_year"],
+                    y=monthly["cumulative"],
+                    mode="lines",
+                    line=dict(color=COLORS["accent"], width=3),
+                    fill="tozeroy",
+                    fillcolor=COLORS["accent"] + "22",
+                ))
+                st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
+
+    with col_right:
+        if "product_category" in valid.columns:
+            with st.container(border=True):
+                st.markdown(f'<div class="card-title">{t("chart_revenue_category")}</div>', unsafe_allow_html=True)
+                cat_rev = valid.groupby("product_category")["price"].sum().sort_values(ascending=False).head(6)
+                fig = go.Figure(go.Pie(
+                    labels=cat_rev.index,
+                    values=cat_rev.values,
+                    hole=0.5,
+                    marker=dict(colors=[COLORS["accent"], COLORS["accent2"], COLORS["primary_light"],
+                                        COLORS["positive"], COLORS["negative"], "#8A7A5A"]),
+                    textfont=dict(color=theme["text"])
+                ))
+                st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
+
+
+# ============================================================================
+# SECTION: SYNTHESE IA
+# ============================================================================
+def display_synthese(df, lang):
+    st.markdown(f'<div class="section-header">{t("nav_synthese")}</div>', unsafe_allow_html=True)
+
+    col_avatar, col_content = st.columns([1, 3.2], gap="large")
+
+    with col_avatar:
+        avatar_url = generate_avatar_b64()
+        st.markdown(f"""
+        <div class="sonar-avatar-wrap">
+            <img src="{avatar_url}" class="sonar-avatar-img" />
+            <div class="sonar-avatar-name">Analytics AI</div>
+            <div class="sonar-avatar-role">Assistant IA</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_content:
+        st.markdown(f"""
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+            <span class="sonar-dot"></span>
+            <span style="font-weight:600; font-size:1rem;">Analyse des données</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        insights = generate_insights(df, lang)
+
+        for title, body in insights.items():
+            st.markdown(f"""
+            <div class="insight-card">
+                <div class="insight-title">{title}</div>
+                <div class="insight-body">{body}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.caption(t("synthese_intro"))
+
+        # Afficher un résumé statistique
+        st.markdown("<div style='margin-top:16px;'></div>", unsafe_allow_html=True)
+        with st.expander("📊 Statistiques détaillées"):
+            if not df.empty:
+                cols_to_show = []
+                if "price" in df.columns:
+                    cols_to_show.append("price")
+                if "delivery_days" in df.columns:
+                    cols_to_show.append("delivery_days")
+                if "avg_review_score" in df.columns:
+                    cols_to_show.append("avg_review_score")
+
+                if cols_to_show:
+                    stats = df[cols_to_show].describe().round(2)
+                    st.dataframe(stats, use_container_width=True)
+
+
+# ============================================================================
+# SECTION: CHAT IA
+# ============================================================================
+def display_chat(df, lang):
+    st.markdown(f'<div class="section-header">{t("nav_chat")}</div>', unsafe_allow_html=True)
+
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    col_avatar, col_content = st.columns([1, 3.2], gap="large")
+
+    with col_avatar:
+        avatar_url = generate_avatar_b64()
+        st.markdown(f"""
+        <div class="sonar-avatar-wrap">
+            <img src="{avatar_url}" class="sonar-avatar-img" />
+            <div class="sonar-avatar-name">Analytics AI</div>
+            <div class="sonar-avatar-role">Assistant IA</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_content:
+        # Header avec reset
+        header_col, reset_col = st.columns([4, 1])
+        with header_col:
+            st.markdown(f"""
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                <span class="sonar-dot"></span>
+                <span style="font-weight:600; font-size:1rem;">{t("chat_intro")}</span>
+                <span style="color:{theme['muted']}; font-size:0.75rem;">({len(st.session_state.chat_history)} messages)</span>
+            </div>
+            """, unsafe_allow_html=True)
+        with reset_col:
+            if st.button("↺ Réinitialiser", key="reset_chat", use_container_width=True):
+                st.session_state.chat_history = []
+                st.rerun()
+
+        # Affichage de l'historique
+        for role, msg in st.session_state.chat_history:
+            if role == "user":
+                st.markdown(f"""
+                <div class="chat-message chat-user">
+                    <b style="color:{COLORS['accent']};">Vous</b><br>{msg}
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div class="chat-message chat-assistant">
+                    <b style="color:{COLORS['accent']};">Assistant</b><br>{msg}
+                </div>
+                """, unsafe_allow_html=True)
+
+        # Input
+        q = st.chat_input(t("chat_placeholder"))
+        if q:
+            st.session_state.chat_history.append(("user", q))
+            ans = answer_question(q, df, lang)
+            st.session_state.chat_history.append(("assistant", ans))
+            st.rerun()
+
+
+# ============================================================================
+# MAIN
+# ============================================================================
+def main():
+    df_all = load_data()
+
+    if df_all is None:
+        st.error("Impossible de charger les données. Vérifiez que le fichier 'data/fct_orders.parquet' existe.")
+        st.stop()
+
+    nav_selected, filters = sidebar(df_all)
+    df = apply_filters(df_all, filters)
+
+    # Header
+    st.markdown(f'<div class="page-title">{t("app_title")}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="page-subtitle">{t("app_subtitle")}</div>', unsafe_allow_html=True)
+
+    # Navigation
+    nav_map = {
+        t('nav_overview'): display_overview,
+        t('nav_logistics'): display_logistics,
+        t('nav_satisfaction'): display_satisfaction,
+        t('nav_customers'): display_customers,
+        t('nav_finance'): display_finance,
+        t('nav_synthese'): lambda d, da: display_synthese(d, st.session_state.lang),
+        t('nav_chat'): lambda d, da: display_chat(d, st.session_state.lang),
+    }
+
+    if nav_selected in nav_map:
+        nav_map[nav_selected](df, df_all)
+
+    # Footer
+    st.markdown(f"""
+    <hr style="border-color:{theme['border']}; margin-top:32px;">
+    <div style="text-align:center; color:{theme['muted']}; font-size:0.7rem; padding:12px 0;">
+        Olist Analytics · Tableau de bord e-commerce · Données Olist
+    </div>
+    """, unsafe_allow_html=True)
+
+
+if __name__ == "__main__":
+    main()
