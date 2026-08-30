@@ -784,8 +784,8 @@ def display_overview(df, df_all):
                 st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
 
         if "product_category" in valid.columns and not valid.empty:
+            st.markdown(f'<div class="card-title">{t("chart_categories")}</div>', unsafe_allow_html=True)
             top_cats = valid.groupby("product_category")["price"].sum().sort_values(ascending=False).head(6)
-            total_cat_rev = valid["price"].sum()
             fig = go.Figure(go.Bar(
                 x=top_cats.values,
                 y=top_cats.index,
@@ -803,13 +803,12 @@ def display_overview(df, df_all):
             if "status" in valid.columns and not valid.empty:
                 status_counts = valid["status"].value_counts()
                 fig = go.Figure(go.Pie(
-    labels=cat_rev.index,
-    values=cat_rev.values,
-    hole=0.5,
-    marker=dict(colors=[COLORS["accent"], COLORS["accent2"], COLORS["primary_light"],
-                        COLORS["positive"], COLORS["negative"], "#8A7A5A"]),
-    textfont=dict(color=theme["text"])
-))
+                    labels=status_counts.index,
+                    values=status_counts.values,
+                    hole=0.5,
+                    marker=dict(colors=[COLORS["accent"], COLORS["accent2"], COLORS["primary_light"], COLORS["positive"]]),
+                    textfont=dict(color=theme["text"])
+                ))
                 st.plotly_chart(style_fig(fig, height=240), use_container_width=True, config={"displayModeBar": False})
 
         if "customer_state" in valid.columns and not valid.empty:
@@ -822,7 +821,6 @@ def display_overview(df, df_all):
                     marker_color=COLORS["accent2"]
                 ))
                 st.plotly_chart(style_fig(fig, height=200), use_container_width=True, config={"displayModeBar": False})
-
 
 # ============================================================================
 # SECTION: LOGISTICS
