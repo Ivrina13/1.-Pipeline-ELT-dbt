@@ -260,58 +260,22 @@ ACCENT_SEQ = [t["accent"], t["accent2"], "#818CF8", "#38BDF8", "#0EA5E9", "#6366
 # ============================================================================
 @st.cache_data
 def load_data():
-    """Cree les donnees EN MEMOIRE avec DuckDB (pas de fichier ecrit sur disque).
-    Sur Streamlit Cloud, le dossier du repo est en lecture seule : on ne peut pas
-    creer/ouvrir un fichier .duckdb. On utilise donc une base ':memory:' generee
-    a la volee, mise en cache par @st.cache_data."""
+    """Charge fct_orders depuis le fichier Parquet versionne dans le repo
+    (data/fct_orders.parquet), via une base DuckDB en memoire (aucune ecriture
+    disque, donc compatible avec le mode lecture seule de Streamlit Cloud)."""
     try:
-        conn = duckdb.connect(database=":memory:")
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        parquet_path = os.path.join(BASE_DIR, "data", "fct_orders.parquet")
 
-        conn.execute("""
-            CREATE TABLE fct_orders AS 
-            WITH dates AS (
-                SELECT 
-                    DATE '2023-01-01' + INTERVAL (row_number() OVER () - 1) DAY as date
-                FROM range(365)
-            )
-            SELECT 
-                'ORDER' || LPAD(row_number() OVER ()::VARCHAR, 6, '0') as order_id,
-                'CUST' || LPAD(CAST(1 + (RANDOM() * 500) AS INT)::VARCHAR, 5, '0') as customer_unique_id,
-                d.date as purchased_at,
-                d.date + INTERVAL (3 + CAST(RANDOM() * 7 AS INT)) DAY as delivered_at,
-                d.date + INTERVAL (5 + CAST(RANDOM() * 5 AS INT)) DAY as estimated_delivery_at,
-                CASE 
-                    WHEN RANDOM() < 0.75 THEN 'delivered'
-                    WHEN RANDOM() < 0.85 THEN 'shipped'
-                    WHEN RANDOM() < 0.95 THEN 'processing'
-                    ELSE 'canceled' 
-                END as status,
-                ROUND(50 + RANDOM() * 950, 2) as price,
-                ROUND(50 + RANDOM() * 950, 2) as total_payment_value,
-                CAST(1 + (RANDOM() * 5) AS INT) as item_count,
-                CAST(1 + (RANDOM() * 12) AS INT) as max_installments,
-                CASE 
-                    WHEN RANDOM() < 0.30 THEN 'SP'
-                    WHEN RANDOM() < 0.50 THEN 'RJ'
-                    WHEN RANDOM() < 0.65 THEN 'MG'
-                    WHEN RANDOM() < 0.75 THEN 'PR'
-                    WHEN RANDOM() < 0.85 THEN 'RS'
-                    ELSE 'SC' 
-                END as customer_state,
-                CASE 
-                    WHEN RANDOM() < 0.20 THEN 'electronics'
-                    WHEN RANDOM() < 0.35 THEN 'clothing'
-                    WHEN RANDOM() < 0.50 THEN 'home_goods'
-                    WHEN RANDOM() < 0.65 THEN 'books'
-                    WHEN RANDOM() < 0.80 THEN 'beauty'
-                    ELSE 'others' 
-                END as product_category,
-                ROUND(1 + RANDOM() * 4, 1) as avg_review_score,
-                3 + CAST(RANDOM() * 10 AS INT) as delivery_days,
-                CASE WHEN RANDOM() > 0.7 THEN true ELSE false END as is_late
-            FROM dates d
-            WHERE RANDOM() < 0.3
-            LIMIT 1000
+        if not os.path.exists(parquet_path):
+            st.error(f"❌ Fichier introuvable : {parquet_path}")
+            st.info("Verifie que 'data/fct_orders.parquet' est bien present et commite dans le repo GitHub.")
+            return None
+
+        conn = duckdb.connect(database=":memory:")
+        conn.execute(f"""
+            CREATE TABLE fct_orders AS
+            SELECT * FROM read_parquet('{parquet_path}')
         """)
 
         df = conn.execute("SELECT * FROM fct_orders").df()
@@ -739,3 +703,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+  
