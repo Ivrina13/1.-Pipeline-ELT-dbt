@@ -23,53 +23,63 @@ BR_STATES = {
 }
 
 # ============================================================================
-# THEME (dark / light, accent bleu-turquoise)
+# DESIGN TOKENS
+# Palette : fond quasi-noir, cartes ardoise, accent indigo signature + teal
+# secondaire pour les deltas positifs. Inspire des dashboards fintech sombres.
 # ============================================================================
 if "theme" not in st.session_state:
     st.session_state.theme = "dark"
 
 THEMES = {
     "dark": {
-        "bg_gradient": "radial-gradient(circle at 20% 0%, #0a1a2e 0%, #0a0e14 45%, #06090c 100%)",
-        "card_bg": "linear-gradient(160deg, #101826 0%, #0d1420 100%)",
-        "card_border": "rgba(255,255,255,0.07)",
-        "sidebar_bg": "#0d1220",
-        "text": "#eef3fa",
-        "muted": "#7c8aa0",
-        "accent": "#22D3EE",
-        "accent2": "#3B82F6",
-        "cta_gradient": "linear-gradient(120deg, #0891b2 0%, #2563eb 100%)",
-        "btn_bg": "rgba(255,255,255,0.12)",
-        "btn_border": "rgba(255,255,255,0.35)",
-        "btn_text": "#ffffff",
+        "bg_gradient": "radial-gradient(circle at 15% 0%, #14121f 0%, #0a0a0d 45%, #060608 100%)",
+        "card_bg": "#131319",
+        "card_bg_soft": "#111117",
+        "card_border": "rgba(255,255,255,0.06)",
+        "sidebar_bg": "#0d0d12",
+        "text": "#f2f2f6",
+        "muted": "#83839a",
+        "accent": "#8B7CFA",
+        "accent_soft": "rgba(139,124,250,0.12)",
+        "accent2": "#3FD7C4",
+        "featured_gradient": "linear-gradient(135deg, #7C6AF0 0%, #4C3FBF 100%)",
+        "btn_bg": "rgba(255,255,255,0.06)",
+        "btn_border": "rgba(255,255,255,0.14)",
+        "btn_text": "#f2f2f6",
         "row_border": "rgba(255,255,255,0.05)",
         "chip_bg": "rgba(255,255,255,0.04)",
         "plotly_template": "plotly_dark",
-        "grid": "rgba(255,255,255,0.06)",
+        "grid": "rgba(255,255,255,0.05)",
+        "nav_active_bg": "rgba(139,124,250,0.14)",
+        "nav_active_text": "#c9c2fb",
     },
     "light": {
-        "bg_gradient": "radial-gradient(circle at 20% 0%, #eaf6fb 0%, #f6fafc 45%, #ffffff 100%)",
+        "bg_gradient": "radial-gradient(circle at 15% 0%, #f1effc 0%, #f8f8fb 45%, #ffffff 100%)",
         "card_bg": "#ffffff",
-        "card_border": "#e2e8f0",
+        "card_bg_soft": "#fafafe",
+        "card_border": "#e9e8f2",
         "sidebar_bg": "#ffffff",
-        "text": "#0f172a",
-        "muted": "#64748b",
-        "accent": "#06B6D4",
-        "accent2": "#2563EB",
-        "cta_gradient": "linear-gradient(120deg, #06b6d4 0%, #2563eb 100%)",
-        "btn_bg": "#2563eb",
-        "btn_border": "#2563eb",
+        "text": "#14131f",
+        "muted": "#6c6b80",
+        "accent": "#6E5CE0",
+        "accent_soft": "rgba(110,92,224,0.10)",
+        "accent2": "#12A28F",
+        "featured_gradient": "linear-gradient(135deg, #7C6AF0 0%, #4C3FBF 100%)",
+        "btn_bg": "#6E5CE0",
+        "btn_border": "#6E5CE0",
         "btn_text": "#ffffff",
-        "row_border": "#eef2f7",
-        "chip_bg": "#f1f5f9",
+        "row_border": "#f0f0f6",
+        "chip_bg": "#f4f3fa",
         "plotly_template": "plotly_white",
-        "grid": "#e5eaf2",
+        "grid": "#ecebf4",
+        "nav_active_bg": "rgba(110,92,224,0.10)",
+        "nav_active_text": "#4C3FBF",
     },
 }
 t = THEMES[st.session_state.theme]
 PLOTLY_TEMPLATE = t["plotly_template"]
-UP_COLOR = "#4ade80" if st.session_state.theme == "dark" else "#16a34a"
-DOWN_COLOR = "#f87171" if st.session_state.theme == "dark" else "#dc2626"
+UP_COLOR = "#3FD98A" if st.session_state.theme == "dark" else "#0F9D63"
+DOWN_COLOR = "#FF7A7A" if st.session_state.theme == "dark" else "#D6425E"
 
 # ----------------------------------------------------------------------------
 # CSS
@@ -82,20 +92,21 @@ html, body, [class*="css"] {{ font-family: 'Inter', sans-serif; }}
 h1, h2, h3 {{ font-family: 'Space Grotesk', sans-serif; color: {t['text']} !important; }}
 
 .stApp {{ background: {t['bg_gradient']}; color: {t['text']}; }}
-.block-container {{ padding-top: 3.2rem; padding-bottom: 3rem; }}
+.block-container {{ padding-top: 2.6rem; padding-bottom: 3rem; }}
 
 .page-title {{
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 2.6rem;
+    font-size: 2.2rem;
     font-weight: 700;
     color: {t['text']};
     margin-bottom: 2px;
     line-height: 1.1;
+    letter-spacing: -0.02em;
 }}
 .page-subtitle {{
     color: {t['muted']};
-    font-size: 0.95rem;
-    margin-bottom: 4px;
+    font-size: 0.92rem;
+    margin-bottom: 26px;
 }}
 .data-note {{
     color: {t['muted']};
@@ -111,52 +122,80 @@ section[data-testid="stSidebar"] {{
 }}
 section[data-testid="stSidebar"] * {{ color: {t['text']} !important; }}
 
+.brand-row {{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+}}
+.brand-mark {{
+    width: 30px; height: 30px;
+    border-radius: 9px;
+    background: {t['featured_gradient']};
+    flex-shrink: 0;
+}}
+.brand-name {{
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+}}
+.brand-sub {{
+    color: {t['muted']};
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 18px;
+}}
+
 .card {{
     background: {t['card_bg']};
     border: 1px solid {t['card_border']};
-    border-radius: 18px;
-    padding: 22px 24px;
-    margin-bottom: 18px;
+    border-radius: 16px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+}}
+.card-featured {{
+    background: {t['featured_gradient']};
+    border: none;
+    border-radius: 16px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
 }}
 .card-title {{
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     color: {t['muted']};
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 6px;
+    letter-spacing: 0.07em;
+    margin-bottom: 8px;
     font-weight: 600;
 }}
+.card-featured .card-title {{ color: rgba(255,255,255,0.75); }}
 .big-number {{
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 2rem;
+    font-size: 1.9rem;
     font-weight: 600;
     color: {t['text']};
+    letter-spacing: -0.01em;
 }}
-.delta-up {{ color: {UP_COLOR}; font-size: 0.82rem; font-weight: 500; margin-top: 4px; }}
-.delta-down {{ color: {DOWN_COLOR}; font-size: 0.82rem; font-weight: 500; margin-top: 4px; }}
-.badge {{ color: {t['accent2']}; font-size: 0.78rem; font-weight: 600; margin-top: 2px; }}
+.card-featured .big-number {{ color: #ffffff; }}
+.delta-up {{ color: {UP_COLOR}; font-size: 0.8rem; font-weight: 500; margin-top: 6px; }}
+.delta-down {{ color: {DOWN_COLOR}; font-size: 0.8rem; font-weight: 500; margin-top: 6px; }}
+.card-featured .delta-up, .card-featured .delta-down {{ color: rgba(255,255,255,0.85); }}
+.badge {{ color: {t['accent']}; font-size: 0.76rem; font-weight: 600; margin-top: 2px; }}
 
 .ticker-row {{
     display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 0; border-bottom: 1px solid {t['row_border']};
+    padding: 11px 0; border-bottom: 1px solid {t['row_border']};
 }}
 .ticker-row:last-child {{ border-bottom: none; }}
-.ticker-name {{ font-weight: 600; font-size: 0.9rem; color: {t['text']}; }}
-.ticker-sub {{ font-size: 0.72rem; color: {t['muted']}; }}
-
-.cta-card {{
-    background: {t['cta_gradient']};
-    border-radius: 18px;
-    padding: 24px 26px;
-    margin-bottom: 18px;
-}}
-.cta-title {{ font-family: 'Space Grotesk', sans-serif; font-size: 1.15rem; font-weight: 600; color: white; }}
-.cta-sub {{ color: rgba(255,255,255,0.9); font-size: 0.82rem; margin-top: 4px; }}
+.ticker-name {{ font-weight: 600; font-size: 0.88rem; color: {t['text']}; }}
+.ticker-sub {{ font-size: 0.71rem; color: {t['muted']}; }}
 
 div[data-testid="stVerticalBlockBorderWrapper"] {{
     background: {t['card_bg']};
     border: 1px solid {t['card_border']} !important;
-    border-radius: 18px;
+    border-radius: 16px;
 }}
 
 div[data-testid="stMetric"] {{ background: transparent; }}
@@ -167,10 +206,25 @@ div.stButton > button {{
     border: 1px solid {t['btn_border']};
     border-radius: 10px;
     font-weight: 500;
-    padding: 6px 18px;
+    font-size: 0.86rem;
+    padding: 7px 18px;
 }}
 
-.stRadio > div {{ flex-direction: row; gap: 4px; }}
+/* Navigation en pills verticales, sans emoji, avec accent actif */
+.stRadio > div {{ flex-direction: column; gap: 2px; }}
+.stRadio > div > label {{
+    padding: 9px 12px !important;
+    border-radius: 10px !important;
+    margin-bottom: 1px;
+}}
+.stRadio > div > label:has(input:checked) {{
+    background: {t['nav_active_bg']} !important;
+}}
+.stRadio > div > label:has(input:checked) p {{
+    color: {t['nav_active_text']} !important;
+    font-weight: 600 !important;
+}}
+
 hr {{ border-color: {t['card_border']}; }}
 #MainMenu {{visibility: hidden;}}
 footer {{visibility: hidden;}}
@@ -179,27 +233,19 @@ footer {{visibility: hidden;}}
 
 
 # ============================================================================
-# HELPERS D'AFFICHAGE (style cards)
+# HELPERS D'AFFICHAGE
 # ============================================================================
-def metric_card(label, value, delta_text=None, delta_up=True):
+def metric_card(label, value, delta_text=None, delta_up=True, featured=False):
     delta_html = ""
     if delta_text:
         cls = "delta-up" if delta_up else "delta-down"
         delta_html = f'<div class="{cls}">{delta_text}</div>'
+    card_class = "card-featured" if featured else "card"
     st.markdown(f"""
-    <div class="card">
+    <div class="{card_class}">
         <div class="card-title">{label}</div>
         <div class="big-number">{value}</div>
         {delta_html}
-    </div>
-    """, unsafe_allow_html=True)
-
-
-def cta_card(title, sub):
-    st.markdown(f"""
-    <div class="cta-card">
-        <div class="cta-title">{title}</div>
-        <div class="cta-sub">{sub}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -252,7 +298,7 @@ def gauge_chart(value, max_value, suffix="", title_font_size=30):
     return fig
 
 
-ACCENT_SEQ = [t["accent"], t["accent2"], "#818CF8", "#38BDF8", "#0EA5E9", "#6366F1", "#A78BFA"]
+ACCENT_SEQ = [t["accent"], t["accent2"], "#B7ACFF", "#6FE3D4", "#5C4FD6", "#8FE0D6", "#A99BFF"]
 
 
 # ============================================================================
@@ -268,7 +314,7 @@ def load_data():
         parquet_path = os.path.join(BASE_DIR, "data", "fct_orders.parquet")
 
         if not os.path.exists(parquet_path):
-            st.error(f"❌ Fichier introuvable : {parquet_path}")
+            st.error(f"Fichier introuvable : {parquet_path}")
             st.info("Verifie que 'data/fct_orders.parquet' est bien present et commite dans le repo GitHub.")
             return None
 
@@ -318,7 +364,7 @@ def load_data():
         return df
 
     except Exception as e:
-        st.error(f"❌ Erreur lors du chargement des donnees: {e}")
+        st.error(f"Erreur lors du chargement des donnees: {e}")
         import traceback
         st.code(traceback.format_exc())
         return None
@@ -329,66 +375,58 @@ def load_data():
 # ============================================================================
 def sidebar(df):
     with st.sidebar:
-        st.markdown("### 📊 Olist Analytics")
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div class="brand-row">
+            <div class="brand-mark"></div>
+            <div class="brand-name">Olist Analytics</div>
+        </div>
+        <div class="brand-sub">Business Intelligence</div>
+        """, unsafe_allow_html=True)
 
-        # Navigation
-        nav = st.radio(
+        nav_selected = st.radio(
             "Navigation",
-            ["🏠 Vue Globale", "📦 Logistique", "⭐ Satisfaction", "👤 Clients", "💰 Finance"],
+            ["Vue Globale", "Logistique", "Satisfaction", "Clients", "Finance"],
             label_visibility="collapsed"
         )
 
-        # Enlever l'emoji pour le nom de l'onglet
-        nav_map = {
-            "🏠 Vue Globale": "Vue Globale",
-            "📦 Logistique": "Logistique",
-            "⭐ Satisfaction": "Satisfaction",
-            "👤 Clients": "Clients",
-            "💰 Finance": "Finance"
-        }
-        nav_selected = nav_map.get(nav, "Vue Globale")
-
         st.markdown("---")
 
-        # Theme
-        theme_label = "☀️ Mode clair" if st.session_state.theme == "dark" else "🌙 Mode sombre"
+        theme_label = "Mode clair" if st.session_state.theme == "dark" else "Mode sombre"
         if st.button(theme_label, use_container_width=True):
             st.session_state.theme = "light" if st.session_state.theme == "dark" else "dark"
             st.rerun()
 
         st.markdown("---")
-        st.markdown("#### 🔍 Filtres")
+        st.markdown("#### Filtres")
 
         filters = {}
 
         if "purchased_at" in df.columns and not df["purchased_at"].isna().all():
             min_date = df["purchased_at"].min().date()
             max_date = df["purchased_at"].max().date()
-            filters["date_range"] = st.date_input("📅 Periode", [min_date, max_date])
+            filters["date_range"] = st.date_input("Periode", [min_date, max_date])
 
         if "customer_state" in df.columns:
             states = ["Tous"] + sorted(df["customer_state"].dropna().unique().tolist())
-            filters["state"] = st.selectbox("📍 Etat", states)
+            filters["state"] = st.selectbox("Etat", states)
 
         if "status" in df.columns:
             statuses = sorted(df["status"].dropna().unique().tolist())
-            filters["status"] = st.multiselect("📌 Statut", statuses, default=statuses)
+            filters["status"] = st.multiselect("Statut", statuses, default=statuses)
 
         if "product_category" in df.columns:
             categories = ["Toutes"] + sorted(df["product_category"].dropna().unique().tolist())
-            filters["category"] = st.selectbox("🏷️ Categorie", categories)
+            filters["category"] = st.selectbox("Categorie", categories)
 
         if "avg_review_score" in df.columns:
-            filters["min_score"] = st.slider("⭐ Note minimale", 1.0, 5.0, 1.0, 0.5)
+            filters["min_score"] = st.slider("Note minimale", 1.0, 5.0, 1.0, 0.5)
 
         st.markdown("---")
-        if st.button("🔄 Reinitialiser", use_container_width=True):
+        if st.button("Reinitialiser", use_container_width=True):
             st.rerun()
 
-        # Info
         st.markdown("---")
-        st.caption(f"📊 {len(df):,} lignes disponibles")
+        st.caption(f"{len(df):,} lignes disponibles")
 
         return nav_selected, filters
 
@@ -435,13 +473,13 @@ def display_overview(df, df_all):
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        metric_card("💰 CA total", f"R$ {total_revenue:,.0f}")
+        metric_card("CA total", f"R$ {total_revenue:,.0f}", featured=True)
     with c2:
-        metric_card("📦 Commandes", f"{total_orders:,}")
+        metric_card("Commandes", f"{total_orders:,}")
     with c3:
-        metric_card("👤 Clients uniques", f"{unique_customers:,}")
+        metric_card("Clients uniques", f"{unique_customers:,}")
     with c4:
-        metric_card("🛒 Panier moyen", f"R$ {avg_basket:,.2f}",
+        metric_card("Panier moyen", f"R$ {avg_basket:,.2f}",
                     delta_text=f"R$ {abs(basket_delta):,.2f} vs moyenne globale",
                     delta_up=basket_delta >= 0)
 
@@ -449,7 +487,7 @@ def display_overview(df, df_all):
 
     with col_left:
         with st.container(border=True):
-            card_title("📈 Evolution des ventes")
+            card_title("Evolution des ventes")
             if "purchased_at" in valid.columns and not valid.empty:
                 daily_sales = valid.groupby("purchased_at")["price"].sum().reset_index()
                 fig = go.Figure()
@@ -469,11 +507,11 @@ def display_overview(df, df_all):
                 (cat[:22], "Categorie", f"R$ {val:,.0f}", f"{(val / total_cat_rev * 100):.1f}% du CA")
                 for cat, val in top_cats.items()
             ]
-            list_card("🏷️ Top 5 categories", rows)
+            list_card("Top 5 categories", rows)
 
     with col_right:
         with st.container(border=True):
-            card_title("📊 Repartition des statuts")
+            card_title("Repartition des statuts")
             if "status" in valid.columns and not valid.empty:
                 status_counts = valid["status"].value_counts()
                 fig = go.Figure(go.Pie(labels=status_counts.index, values=status_counts.values,
@@ -487,7 +525,7 @@ def display_overview(df, df_all):
                 (state, "Etat", f"{n:,}", f"{(n / len(valid) * 100):.1f}% des lignes")
                 for state, n in top_states.items()
             ]
-            list_card("📍 Top 5 Etats", rows)
+            list_card("Top 5 Etats", rows)
 
 
 # ============================================================================
@@ -513,11 +551,11 @@ def display_logistics(df, df_all):
 
     c1, c2, c3 = st.columns([1, 1, 1.2])
     with c1:
-        metric_card("📦 Delai moyen", f"{avg_delivery:.1f} j")
+        metric_card("Delai moyen", f"{avg_delivery:.1f} j", featured=True)
     with c2:
-        metric_card("📊 Delai median", f"{median_delivery:.1f} j")
+        metric_card("Delai median", f"{median_delivery:.1f} j")
     with c3:
-        metric_card("⏰ Taux de retard", f"{late_rate:.1f}%",
+        metric_card("Taux de retard", f"{late_rate:.1f}%",
                     delta_text=f"{abs(late_delta):.1f} pts vs moyenne globale",
                     delta_up=late_delta >= 0)
 
@@ -525,14 +563,14 @@ def display_logistics(df, df_all):
 
     with col_left:
         with st.container(border=True):
-            card_title("✅ Taux de livraison a temps")
+            card_title("Taux de livraison a temps")
             on_time_rate = 100 - late_rate
             fig = gauge_chart(round(on_time_rate, 1), 100, suffix="%")
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
     with col_right:
         with st.container(border=True):
-            card_title("📊 Distribution des delais de livraison")
+            card_title("Distribution des delais de livraison")
             fig = px.histogram(valid, x="delivery_days", nbins=30)
             fig.update_traces(marker_color=t["accent"])
             st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
@@ -541,7 +579,7 @@ def display_logistics(df, df_all):
     with col_a:
         if "customer_state" in valid.columns:
             with st.container(border=True):
-                card_title("📍 Delai par Etat")
+                card_title("Delai par Etat")
                 fig = px.box(valid, x="customer_state", y="delivery_days")
                 fig.update_traces(marker_color=t["accent2"])
                 st.plotly_chart(style_fig(fig, height=300), use_container_width=True, config={"displayModeBar": False})
@@ -549,7 +587,7 @@ def display_logistics(df, df_all):
     with col_b:
         if "purchased_at" in valid.columns:
             with st.container(border=True):
-                card_title("📈 Evolution du taux de retard")
+                card_title("Evolution du taux de retard")
                 v = valid.copy()
                 v["month_year"] = v["purchased_at"].dt.to_period('M').astype(str)
                 late_by_month = v.groupby("month_year")["is_late"].mean().reset_index()
@@ -578,23 +616,23 @@ def display_satisfaction(df, df_all):
 
     c1, c2, c3 = st.columns([1, 1, 1])
     with c1:
-        metric_card("⭐ Bonnes notes (4-5)", f"{good_rate:.1f}%")
+        metric_card("Bonnes notes (4-5)", f"{good_rate:.1f}%", featured=True)
     with c2:
-        metric_card("⭐ Mauvaises notes (1-2)", f"{bad_rate:.1f}%")
+        metric_card("Mauvaises notes (1-2)", f"{bad_rate:.1f}%")
     with c3:
-        metric_card("📝 Volume d'avis", f"{len(valid):,}")
+        metric_card("Volume d'avis", f"{len(valid):,}")
 
     col_left, col_right = st.columns([1, 1.7])
 
     with col_left:
         with st.container(border=True):
-            card_title("📊 Note moyenne")
+            card_title("Note moyenne")
             fig = gauge_chart(round(avg_score, 2), 5)
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
     with col_right:
         with st.container(border=True):
-            card_title("📊 Distribution des notes")
+            card_title("Distribution des notes")
             v = valid.copy()
             v["review_score_rounded"] = v["avg_review_score"].round()
             fig = px.histogram(v, x="review_score_rounded", nbins=5)
@@ -605,7 +643,7 @@ def display_satisfaction(df, df_all):
     with col_a:
         if "product_category" in valid.columns:
             with st.container(border=True):
-                card_title("⭐ Note moyenne par categorie")
+                card_title("Note moyenne par categorie")
                 score_by_cat = valid.groupby("product_category")["avg_review_score"].mean().sort_values(ascending=False).head(10)
                 fig = px.bar(score_by_cat)
                 fig.update_traces(marker_color=t["accent2"])
@@ -614,7 +652,7 @@ def display_satisfaction(df, df_all):
     with col_b:
         if "delivery_days" in valid.columns:
             with st.container(border=True):
-                card_title("📦 Delai de livraison vs note")
+                card_title("Delai de livraison vs note")
                 d = valid[valid["delivery_days"].notna()]
                 if not d.empty:
                     fig = px.scatter(d, x="delivery_days", y="avg_review_score", opacity=0.5,
@@ -646,17 +684,17 @@ def display_customers(df, df_all):
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        metric_card("🔄 Taux de rechat", f"{repeat_rate:.1f}%")
+        metric_card("Taux de rechat", f"{repeat_rate:.1f}%", featured=True)
     with c2:
-        metric_card("⏰ Inactifs (>1 an)", f"{churn_rate:.1f}%")
+        metric_card("Inactifs (plus d'1 an)", f"{churn_rate:.1f}%")
     with c3:
-        metric_card("👤 Total clients", f"{len(rfm):,}")
+        metric_card("Total clients", f"{len(rfm):,}")
 
     col_left, col_right = st.columns([1, 1.4])
 
     with col_left:
         with st.container(border=True):
-            card_title("📊 Segmentation clients")
+            card_title("Segmentation clients")
             seg_counts = rfm["segment"].value_counts()
             fig = go.Figure(go.Pie(labels=seg_counts.index, values=seg_counts.values,
                                     hole=0.6, marker=dict(colors=ACCENT_SEQ)))
@@ -664,7 +702,7 @@ def display_customers(df, df_all):
 
     with col_right:
         with st.container(border=True):
-            card_title("💎 Top 10 clients (par CA)")
+            card_title("Top 10 clients (par CA)")
             top_clients = rfm.nlargest(10, "monetary")
             rows = [
                 (cust_id[:15], f"{int(row['frequency'])} commande(s)", f"R$ {row['monetary']:,.0f}", str(row["segment"]))
@@ -674,7 +712,58 @@ def display_customers(df, df_all):
 
 
 # ============================================================================
-# MAIN — a completer avec la section Finance + le reste de ton code original
+# 5. FINANCE
+# ============================================================================
+def display_finance(df, df_all):
+    valid = df[df["price"] > 0]
+    if valid.empty:
+        st.warning("Aucune donnee financiere pour cette selection.")
+        return
+
+    total_revenue = valid["price"].sum()
+    total_payment = valid["total_payment_value"].sum() if "total_payment_value" in valid.columns else total_revenue
+    n_orders = valid["order_id"].nunique()
+    avg_installments = valid["max_installments"].mean() if "max_installments" in valid.columns else None
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        metric_card("Chiffre d'affaires", f"R$ {total_revenue:,.0f}", featured=True)
+    with c2:
+        metric_card("Total encaisse", f"R$ {total_payment:,.0f}")
+    with c3:
+        if avg_installments is not None:
+            metric_card("Versements moyens", f"{avg_installments:.1f}x")
+        else:
+            metric_card("Commandes", f"{n_orders:,}")
+
+    col_left, col_right = st.columns([1.7, 1])
+
+    with col_left:
+        with st.container(border=True):
+            card_title("CA cumule dans le temps")
+            if "purchased_at" in valid.columns:
+                monthly = valid.groupby("month_year")["price"].sum().reset_index().sort_values("month_year")
+                monthly["cumulative"] = monthly["price"].cumsum()
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(
+                    x=monthly["month_year"], y=monthly["cumulative"], mode="lines",
+                    line=dict(color=t["accent"], width=3, shape="spline"),
+                    fill="tozeroy", fillcolor=t["accent"] + "22",
+                ))
+                st.plotly_chart(style_fig(fig, height=300), use_container_width=True, config={"displayModeBar": False})
+
+    with col_right:
+        if "product_category" in valid.columns:
+            with st.container(border=True):
+                card_title("CA par categorie")
+                cat_rev = valid.groupby("product_category")["price"].sum().sort_values(ascending=False).head(6)
+                fig = go.Figure(go.Pie(labels=cat_rev.index, values=cat_rev.values,
+                                        hole=0.6, marker=dict(colors=ACCENT_SEQ)))
+                st.plotly_chart(style_fig(fig, height=300), use_container_width=True, config={"displayModeBar": False})
+
+
+# ============================================================================
+# MAIN
 # ============================================================================
 def main():
     df_all = load_data()
@@ -686,7 +775,7 @@ def main():
     nav_selected, filters = sidebar(df_all)
     df = apply_filters(df_all, filters)
 
-    st.markdown('<p class="page-title">📊 Olist Analytics</p>', unsafe_allow_html=True)
+    st.markdown('<p class="page-title">Olist Analytics</p>', unsafe_allow_html=True)
     st.markdown('<p class="page-subtitle">Dashboard e-commerce — donnees Olist</p>', unsafe_allow_html=True)
 
     if nav_selected == "Vue Globale":
@@ -698,7 +787,7 @@ def main():
     elif nav_selected == "Clients":
         display_customers(df, df_all)
     elif nav_selected == "Finance":
-        st.info("Section Finance a completer — le code original fourni s'arretait avant cette partie.")
+        display_finance(df, df_all)
 
 
 if __name__ == "__main__":
