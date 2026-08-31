@@ -1,10 +1,19 @@
 """
 Olist Analytics — Tableau de bord professionnel.
-Multi-onglets, carte géospatiale, diagnostic problème/solution, synthèse IA, FR/EN, thème sombre.
+Couvre : vue d'ensemble, géospatial, logistique, satisfaction (+ mots-clés avis négatifs),
+vendeurs/marketplace, paiements, clients (RFM business, sans ML), finance,
+diagnostic problème/action, synthèse IA, assistant IA. FR/EN, thème sombre.
+
+Toutes les sections au-delà de la table agrégée fct_orders.parquet (vendeurs, paiements,
+texte des avis) sont conditionnelles : si les colonnes nécessaires n'existent pas, l'app
+affiche un message explicite au lieu de planter.
+
 Lancer avec : streamlit run app.py
 """
 import base64
 import os
+import re
+from collections import Counter
 
 import duckdb
 import numpy as np
@@ -31,6 +40,20 @@ BR_STATES = {
 
 BRAZIL_GEOJSON_URL = "https://raw.githubusercontent.com/codeforgermany/click_that_hood/main/public/data/brazil-states.geojson"
 
+STOPWORDS_PT = {
+    "de", "a", "o", "que", "e", "do", "da", "em", "um", "para", "com", "não", "uma", "os",
+    "no", "se", "na", "por", "mais", "as", "dos", "como", "mas", "ao", "ele", "das", "seu",
+    "sua", "ou", "quando", "muito", "nos", "já", "eu", "também", "só", "pelo", "pela", "até",
+    "isso", "ela", "entre", "depois", "sem", "mesmo", "aos", "seus", "quem", "nas", "me",
+    "esse", "eles", "você", "essa", "num", "nem", "suas", "meu", "às", "minha", "numa",
+    "pelos", "elas", "qual", "nós", "lhe", "deles", "essas", "esses", "pelas", "este",
+    "dele", "tu", "te", "vocês", "vos", "lhes", "meus", "minhas", "teu", "tua", "teus",
+    "tuas", "nosso", "nossa", "nossos", "nossas", "dela", "delas", "esta", "estes", "estas",
+    "aquele", "aquela", "aqueles", "aquelas", "isto", "aquilo", "estou", "está", "estamos",
+    "estão", "estive", "esteve", "estivemos", "estiveram", "produto", "recebi", "comprei",
+    "para", "pois", "porque", "sobre", "todo", "toda", "todos", "todas", "outro", "outra",
+}
+
 # ============================================================================
 # COULEURS PROFESSIONNELLES
 # ============================================================================
@@ -51,6 +74,9 @@ COLORS = {
     "gradient_accent": "linear-gradient(135deg, #C9A84C 0%, #B8953A 100%)",
 }
 
+PIE_COLORS = [COLORS["accent"], COLORS["accent2"], COLORS["primary_light"],
+              COLORS["positive"], COLORS["negative"], "#8A7A5A", "#5A6E8A"]
+
 # ============================================================================
 # I18N
 # ============================================================================
@@ -62,6 +88,8 @@ TRANSLATIONS = {
         "nav_geo": "Carte & Géo",
         "nav_logistics": "Logistique",
         "nav_satisfaction": "Satisfaction",
+        "nav_sellers": "Vendeurs",
+        "nav_payments": "Paiements",
         "nav_customers": "Clients",
         "nav_finance": "Finance",
         "nav_problems": "Problèmes & Actions",
@@ -94,6 +122,11 @@ TRANSLATIONS = {
         "kpi_top_state_revenue": "1er État (CA)",
         "kpi_top_state_orders": "1er État (commandes)",
         "kpi_states_covered": "États couverts",
+        "kpi_seller_count": "Vendeurs actifs",
+        "kpi_top_seller": "Top vendeur (CA)",
+        "kpi_seller_concentration": "CA du top 10% vendeurs",
+        "kpi_payment_types": "Moyens de paiement",
+        "kpi_avg_installments": "Versements moyens",
         "chart_sales": "Évolution des ventes",
         "chart_status": "Répartition des statuts",
         "chart_categories": "Top catégories",
@@ -104,7 +137,15 @@ TRANSLATIONS = {
         "chart_score_dist": "Distribution des notes",
         "chart_score_category": "Note moyenne par catégorie",
         "chart_delivery_score": "Délai vs note",
-        "chart_segments": "Segmentation clients (récence)",
+        "chart_score_price": "Prix vs note",
+        "chart_negative_keywords": "Mots-clés fréquents dans les avis négatifs",
+        "chart_seller_revenue": "Top 10 vendeurs (CA)",
+        "chart_seller_pareto": "Concentration du CA par vendeur (courbe de Pareto)",
+        "chart_seller_score": "Distribution des notes vendeurs",
+        "chart_seller_distance": "Délai selon origine (même État vs autre État)",
+        "chart_payment_type": "Répartition des moyens de paiement",
+        "chart_installments_basket": "Panier moyen par nombre de versements",
+        "chart_segments": "Segments RFM",
         "chart_top_clients": "Top clients (par CA)",
         "chart_revenue_cum": "CA cumulé",
         "chart_revenue_category": "CA par catégorie",
@@ -112,7 +153,7 @@ TRANSLATIONS = {
         "geo_view_choropleth": "Carte par État",
         "geo_view_points": "Carte de points",
         "geo_table_title": "Classement des États",
-        "geo_fallback_note": "Carte indisponible (connexion réseau) — repli en graphique à barres.",
+        "geo_fallback_note": "Carte indisponible (connexion réseau ou version Plotly) — repli en graphique à barres.",
         "geo_intro": "Répartition géographique des ventes et de la logistique sur le territoire brésilien.",
         "problems_intro": "Problèmes détectés automatiquement à partir des données filtrées, avec une action recommandée pour chacun.",
         "problems_none": "Aucun problème significatif détecté sur cette sélection au regard des seuils définis.",
@@ -129,6 +170,17 @@ TRANSLATIONS = {
         "no_reviews": "Les données d'avis ne sont pas disponibles.",
         "no_customers": "Les données clients ne sont pas disponibles pour cette sélection.",
         "no_finance": "Aucune donnée financière pour cette sélection.",
+        "no_sellers": "La colonne 'seller_id' n'existe pas dans fct_orders.parquet. Pour activer cet onglet, il faut enrichir la table avec l'identifiant vendeur (et idéalement seller_state).",
+        "no_payments": "Aucune colonne de paiement (payment_type, max_installments...) n'a été trouvée dans fct_orders.parquet.",
+        "no_review_text": "Aucune colonne de texte d'avis (review_comment_message...) n'a été trouvée : l'analyse de mots-clés n'est pas disponible sur cette table agrégée.",
+        "rfm_champions": "Champions",
+        "rfm_loyal": "Clients fidèles",
+        "rfm_new": "Nouveaux clients",
+        "rfm_at_risk": "À risque",
+        "rfm_lost": "Perdus",
+        "rfm_standard": "Standard",
+        "same_state": "Même État",
+        "diff_state": "Autre État",
     },
     "EN": {
         "app_title": "Olist Analytics",
@@ -137,6 +189,8 @@ TRANSLATIONS = {
         "nav_geo": "Map & Geo",
         "nav_logistics": "Logistics",
         "nav_satisfaction": "Satisfaction",
+        "nav_sellers": "Sellers",
+        "nav_payments": "Payments",
         "nav_customers": "Customers",
         "nav_finance": "Finance",
         "nav_problems": "Problems & Actions",
@@ -169,6 +223,11 @@ TRANSLATIONS = {
         "kpi_top_state_revenue": "#1 state (revenue)",
         "kpi_top_state_orders": "#1 state (orders)",
         "kpi_states_covered": "States covered",
+        "kpi_seller_count": "Active sellers",
+        "kpi_top_seller": "Top seller (revenue)",
+        "kpi_seller_concentration": "Revenue share of top 10% sellers",
+        "kpi_payment_types": "Payment methods",
+        "kpi_avg_installments": "Avg installments",
         "chart_sales": "Sales evolution",
         "chart_status": "Status distribution",
         "chart_categories": "Top categories",
@@ -179,7 +238,15 @@ TRANSLATIONS = {
         "chart_score_dist": "Rating distribution",
         "chart_score_category": "Avg rating by category",
         "chart_delivery_score": "Delivery vs rating",
-        "chart_segments": "Customer segments (recency)",
+        "chart_score_price": "Price vs rating",
+        "chart_negative_keywords": "Frequent keywords in negative reviews",
+        "chart_seller_revenue": "Top 10 sellers (revenue)",
+        "chart_seller_pareto": "Revenue concentration by seller (Pareto curve)",
+        "chart_seller_score": "Seller rating distribution",
+        "chart_seller_distance": "Delivery time by origin (same state vs other state)",
+        "chart_payment_type": "Payment method breakdown",
+        "chart_installments_basket": "Avg basket by number of installments",
+        "chart_segments": "RFM segments",
         "chart_top_clients": "Top clients",
         "chart_revenue_cum": "Cumulative revenue",
         "chart_revenue_category": "Revenue by category",
@@ -187,7 +254,7 @@ TRANSLATIONS = {
         "geo_view_choropleth": "Choropleth map",
         "geo_view_points": "Point map",
         "geo_table_title": "State ranking",
-        "geo_fallback_note": "Map unavailable (network) — falling back to bar chart.",
+        "geo_fallback_note": "Map unavailable (network or Plotly version) — falling back to bar chart.",
         "geo_intro": "Geographic distribution of sales and logistics across Brazil.",
         "problems_intro": "Problems automatically detected from the filtered data, each with a recommended action.",
         "problems_none": "No significant problem detected in this selection given the defined thresholds.",
@@ -204,6 +271,17 @@ TRANSLATIONS = {
         "no_reviews": "Review data is not available.",
         "no_customers": "Customer data is not available for this selection.",
         "no_finance": "No financial data for this selection.",
+        "no_sellers": "The 'seller_id' column doesn't exist in fct_orders.parquet. To enable this tab, enrich the table with the seller identifier (ideally seller_state too).",
+        "no_payments": "No payment column (payment_type, max_installments...) was found in fct_orders.parquet.",
+        "no_review_text": "No review text column (review_comment_message...) was found: keyword analysis is not available on this aggregated table.",
+        "rfm_champions": "Champions",
+        "rfm_loyal": "Loyal customers",
+        "rfm_new": "New customers",
+        "rfm_at_risk": "At risk",
+        "rfm_lost": "Lost",
+        "rfm_standard": "Standard",
+        "same_state": "Same state",
+        "diff_state": "Other state",
     }
 }
 
@@ -258,7 +336,22 @@ def generate_insights(df, lang):
             f"La base de clients compte {n_customers:,} clients uniques."
         ))
 
-    return {f"{i+1}. {title}": body for i, (title, body) in enumerate(insights[:6])}
+    if "seller_id" in df.columns:
+        n_sellers = df["seller_id"].nunique()
+        insights.append((
+            f"Vendeurs actifs: {n_sellers:,}",
+            f"La marketplace compte {n_sellers:,} vendeurs actifs sur la période."
+        ))
+
+    if "payment_type" in df.columns:
+        top_payment = df["payment_type"].value_counts()
+        if not top_payment.empty:
+            insights.append((
+                f"Paiement dominant: {top_payment.index[0]}",
+                f"Le moyen de paiement le plus utilisé est '{top_payment.index[0]}' ({top_payment.iloc[0]:,} commandes)."
+            ))
+
+    return {f"{i+1}. {title}": body for i, (title, body) in enumerate(insights[:8])}
 
 
 def answer_question(q, df, lang):
@@ -297,7 +390,20 @@ def answer_question(q, df, lang):
                 return f"L'État générant le plus de CA est {top.index[0]} avec {top.iloc[0]:,.0f} R$."
         return "Données géographiques non disponibles."
 
-    return "Je peux vous renseigner sur : le chiffre d'affaires, les livraisons, les avis clients, la répartition géographique et les statistiques générales."
+    if any(w in q_lower for w in ["vendeur", "seller", "marketplace"]):
+        if "seller_id" in df.columns:
+            n = df["seller_id"].nunique()
+            return f"La marketplace compte {n:,} vendeurs actifs sur cette sélection."
+        return "Données vendeurs non disponibles dans fct_orders.parquet (pas de colonne seller_id)."
+
+    if any(w in q_lower for w in ["paiement", "payment", "carte bancaire", "boleto", "versement", "installment"]):
+        if "payment_type" in df.columns:
+            top = df["payment_type"].value_counts()
+            return f"Le moyen de paiement le plus utilisé est '{top.index[0]}' ({top.iloc[0]:,} commandes)."
+        return "Données de paiement non disponibles dans fct_orders.parquet."
+
+    return ("Je peux vous renseigner sur : le chiffre d'affaires, les livraisons, les avis clients, "
+            "la répartition géographique, les vendeurs, les paiements et les statistiques générales.")
 
 
 # ============================================================================
@@ -576,6 +682,16 @@ html, body, [class*="css"] {{
     line-height: 1.4;
 }}
 
+.missing-data-card {{
+    background: {theme["card"]};
+    border: 1px dashed {theme["card_border"]};
+    border-radius: 10px;
+    padding: 16px 18px;
+    color: {theme["muted"]};
+    font-size: 0.85rem;
+    line-height: 1.5;
+}}
+
 .chat-message {{
     padding: 10px 14px;
     border-radius: 10px;
@@ -674,13 +790,20 @@ def load_data():
 
         if "customer_state" in df.columns:
             df["customer_state"] = df["customer_state"].fillna("Inconnu")
-            # On conserve le code d'origine pour l'affichage compact, et on
-            # dérive un libellé complet (utilisé pour matcher le geojson).
             df["customer_state_code"] = df["customer_state"]
             df["customer_state"] = df["customer_state"].map(BR_STATES).fillna(df["customer_state"])
 
+        if "seller_state" in df.columns:
+            df["seller_state"] = df["seller_state"].fillna("Inconnu")
+            df["seller_state_code"] = df["seller_state"]
+            df["seller_state"] = df["seller_state"].map(BR_STATES).fillna(df["seller_state"])
+
         if "purchased_at" in df.columns:
             df["month_year"] = df["purchased_at"].dt.to_period("M").astype(str)
+
+        # Colonne d'installments : on uniformise le nom si une variante existe
+        if "max_installments" not in df.columns and "payment_installments" in df.columns:
+            df["max_installments"] = df["payment_installments"]
 
         return df
 
@@ -751,6 +874,13 @@ def find_latlon_cols(df):
     return None
 
 
+def find_review_text_col(df):
+    for c in ["review_comment_message", "review_text", "comment", "review_comment"]:
+        if c in df.columns:
+            return c
+    return None
+
+
 # ============================================================================
 # HELPERS
 # ============================================================================
@@ -786,6 +916,10 @@ def metric_card(label, value, delta_text=None, delta_up=True, featured=False):
         {delta_html}
     </div>
     """, unsafe_allow_html=True)
+
+
+def missing_data_card(message):
+    st.markdown(f'<div class="missing-data-card">{message}</div>', unsafe_allow_html=True)
 
 
 def apply_filters(df, filters):
@@ -852,13 +986,12 @@ def sidebar(df):
         st.markdown("<hr class='brand-separator'>", unsafe_allow_html=True)
 
         st.markdown('<div class="nav-label">Navigation</div>', unsafe_allow_html=True)
-        nav_selected = st.radio(
-            "",
-            [t('nav_overview'), t('nav_geo'), t('nav_logistics'), t('nav_satisfaction'),
-             t('nav_customers'), t('nav_finance'), t('nav_problems'),
-             t('nav_synthese'), t('nav_chat')],
-            label_visibility="collapsed"
-        )
+        nav_options = [
+            t('nav_overview'), t('nav_geo'), t('nav_logistics'), t('nav_satisfaction'),
+            t('nav_sellers'), t('nav_payments'), t('nav_customers'), t('nav_finance'),
+            t('nav_problems'), t('nav_synthese'), t('nav_chat'),
+        ]
+        nav_selected = st.radio("", nav_options, label_visibility="collapsed")
 
         st.markdown("<hr class='brand-separator'>", unsafe_allow_html=True)
         theme_btn_label = t("theme_toggle") if st.session_state.theme == "dark" else t("theme_toggle_dark")
@@ -973,7 +1106,7 @@ def display_overview(df, df_all):
                     labels=status_counts.index,
                     values=status_counts.values,
                     hole=0.5,
-                    marker=dict(colors=[COLORS["accent"], COLORS["accent2"], COLORS["primary_light"], COLORS["positive"]]),
+                    marker=dict(colors=PIE_COLORS),
                     textfont=dict(color=theme["text"])
                 ))
                 st.plotly_chart(style_fig(fig, height=240), use_container_width=True, config={"displayModeBar": False})
@@ -1182,6 +1315,22 @@ def display_logistics(df, df_all):
 # ============================================================================
 # SECTION: SATISFACTION
 # ============================================================================
+def extract_negative_keywords(df, top_n=15):
+    text_col = find_review_text_col(df)
+    if text_col is None or "avg_review_score" not in df.columns:
+        return None
+    neg = df.loc[df["avg_review_score"] <= 2, text_col].dropna().astype(str)
+    if neg.empty:
+        return None
+    words = []
+    for txt in neg:
+        tokens = re.findall(r"[a-zà-úA-ZÀ-Ú]+", txt.lower())
+        words.extend(w for w in tokens if len(w) > 3 and w not in STOPWORDS_PT)
+    if not words:
+        return None
+    return Counter(words).most_common(top_n)
+
+
 def display_satisfaction(df, df_all):
     if "avg_review_score" not in df.columns:
         st.warning(t("no_reviews"))
@@ -1253,10 +1402,231 @@ def display_satisfaction(df, df_all):
                     fig.update_traces(marker_color=COLORS["accent"], marker_size=5)
                     st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
 
+    if "price" in valid.columns:
+        with st.container(border=True):
+            st.markdown(f'<div class="card-title">{t("chart_score_price")}</div>', unsafe_allow_html=True)
+            d = valid[(valid["price"] > 0) & valid["price"].notna()]
+            if not d.empty:
+                fig = px.scatter(d, x="price", y="avg_review_score", opacity=0.35)
+                fig.update_traces(marker_color=COLORS["accent2"], marker_size=5)
+                st.plotly_chart(style_fig(fig, height=260), use_container_width=True, config={"displayModeBar": False})
+
+    with st.container(border=True):
+        st.markdown(f'<div class="card-title">{t("chart_negative_keywords")}</div>', unsafe_allow_html=True)
+        keywords = extract_negative_keywords(valid)
+        if keywords is None:
+            missing_data_card(t("no_review_text"))
+        else:
+            words, counts = zip(*keywords)
+            fig = go.Figure(go.Bar(
+                x=list(counts), y=list(words), orientation="h",
+                marker_color=COLORS["negative"],
+            ))
+            fig.update_yaxes(autorange="reversed")
+            st.plotly_chart(style_fig(fig, height=380), use_container_width=True, config={"displayModeBar": False})
+            st.caption("Analyse simple par fréquence de mots (hors mots vides portugais) — pas d'analyse de sentiment avancée."
+                       if st.session_state.lang == "FR" else
+                       "Simple word-frequency analysis (Portuguese stopwords removed) — not advanced sentiment analysis.")
+
 
 # ============================================================================
-# SECTION: CUSTOMERS
+# SECTION: VENDEURS / MARKETPLACE
 # ============================================================================
+def display_sellers(df, df_all):
+    if "seller_id" not in df.columns:
+        st.warning(t("no_sellers"))
+        return
+
+    valid = df[df["price"] > 0] if "price" in df.columns else df.copy()
+    valid = valid[valid["seller_id"].notna()]
+    if valid.empty:
+        st.warning(t("no_sellers"))
+        return
+
+    has_revenue = "price" in valid.columns
+    agg = {"orders": ("order_id", "nunique")}
+    if has_revenue:
+        agg["revenue"] = ("price", "sum")
+    if "avg_review_score" in valid.columns:
+        agg["avg_score"] = ("avg_review_score", "mean")
+
+    seller_agg = valid.groupby("seller_id").agg(**agg).reset_index()
+    sort_col = "revenue" if has_revenue else "orders"
+    seller_agg_sorted = seller_agg.sort_values(sort_col, ascending=False).reset_index(drop=True)
+
+    n_sellers = len(seller_agg_sorted)
+    total = seller_agg_sorted[sort_col].sum()
+    top10_n = max(1, int(np.ceil(n_sellers * 0.1)))
+    top10_share = seller_agg_sorted.iloc[:top10_n][sort_col].sum() / total * 100 if total > 0 else 0
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        metric_card(t("kpi_seller_count"), f"{n_sellers:,}", featured=True)
+    with c2:
+        top_seller_id = str(seller_agg_sorted.iloc[0]["seller_id"])
+        metric_card(t("kpi_top_seller"), top_seller_id[:14],
+                    delta_text=f"R$ {seller_agg_sorted.iloc[0][sort_col]:,.0f}" if has_revenue else f"{seller_agg_sorted.iloc[0][sort_col]:,.0f} cmd.")
+    with c3:
+        metric_card(t("kpi_seller_concentration"), f"{top10_share:.1f}%")
+
+    col_left, col_right = st.columns([1, 1])
+
+    with col_left:
+        with st.container(border=True):
+            st.markdown(f'<div class="card-title">{t("chart_seller_revenue")}</div>', unsafe_allow_html=True)
+            top10 = seller_agg_sorted.head(10)
+            labels = top10["seller_id"].astype(str).str.slice(0, 10)
+            fig = go.Figure(go.Bar(
+                x=labels, y=top10[sort_col], marker_color=COLORS["accent"],
+            ))
+            st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
+
+    with col_right:
+        with st.container(border=True):
+            st.markdown(f'<div class="card-title">{t("chart_seller_pareto")}</div>', unsafe_allow_html=True)
+            pareto = seller_agg_sorted.copy()
+            pareto["cum_pct"] = pareto[sort_col].cumsum() / total * 100 if total > 0 else 0
+            pareto["seller_rank_pct"] = (np.arange(1, n_sellers + 1)) / n_sellers * 100
+            fig = go.Figure(go.Scatter(
+                x=pareto["seller_rank_pct"], y=pareto["cum_pct"], mode="lines",
+                line=dict(color=COLORS["accent2"], width=2.5), fill="tozeroy",
+                fillcolor=COLORS["accent2"] + "22",
+            ))
+            fig.update_xaxes(title="% des vendeurs" if st.session_state.lang == "FR" else "% of sellers")
+            fig.update_yaxes(title="% du CA cumulé" if st.session_state.lang == "FR" else "% cumulative revenue")
+            st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
+
+    if "avg_score" in seller_agg.columns:
+        with st.container(border=True):
+            st.markdown(f'<div class="card-title">{t("chart_seller_score")}</div>', unsafe_allow_html=True)
+            fig = px.histogram(seller_agg.dropna(subset=["avg_score"]), x="avg_score", nbins=20)
+            fig.update_traces(marker_color=COLORS["accent"])
+            st.plotly_chart(style_fig(fig, height=260), use_container_width=True, config={"displayModeBar": False})
+
+    if "seller_state" in valid.columns and "customer_state" in valid.columns and "delivery_days" in valid.columns:
+        with st.container(border=True):
+            st.markdown(f'<div class="card-title">{t("chart_seller_distance")}</div>', unsafe_allow_html=True)
+            v = valid.dropna(subset=["seller_state", "customer_state", "delivery_days"]).copy()
+            if not v.empty:
+                v["origin"] = np.where(v["seller_state"] == v["customer_state"], t("same_state"), t("diff_state"))
+                fig = px.box(v, x="origin", y="delivery_days", color="origin",
+                             color_discrete_sequence=[COLORS["positive"], COLORS["negative"]])
+                st.plotly_chart(style_fig(fig, height=260), use_container_width=True, config={"displayModeBar": False})
+
+
+# ============================================================================
+# SECTION: PAIEMENTS
+# ============================================================================
+def display_payments(df, df_all):
+    has_type = "payment_type" in df.columns
+    installments_col = "max_installments" if "max_installments" in df.columns else (
+        "payment_installments" if "payment_installments" in df.columns else None
+    )
+
+    if not has_type and installments_col is None:
+        st.warning(t("no_payments"))
+        return
+
+    valid = df[df["price"] > 0] if "price" in df.columns else df.copy()
+    if valid.empty:
+        st.warning(t("no_payments"))
+        return
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        if has_type:
+            metric_card(t("kpi_payment_types"), f"{valid['payment_type'].nunique()}", featured=True)
+        else:
+            metric_card(t("kpi_payment_types"), "—", featured=True)
+    with c2:
+        if installments_col:
+            metric_card(t("kpi_avg_installments"), f"{valid[installments_col].mean():.1f}x")
+        else:
+            metric_card(t("kpi_avg_installments"), "—")
+    with c3:
+        total_payment = valid["total_payment_value"].sum() if "total_payment_value" in valid.columns else (
+            valid["price"].sum() if "price" in valid.columns else 0)
+        label = "Total encaissé" if st.session_state.lang == "FR" else "Total collected"
+        metric_card(label, f"R$ {total_payment:,.0f}")
+
+    col_left, col_right = st.columns([1, 1.3])
+
+    with col_left:
+        with st.container(border=True):
+            st.markdown(f'<div class="card-title">{t("chart_payment_type")}</div>', unsafe_allow_html=True)
+            if has_type:
+                counts = valid["payment_type"].value_counts()
+                fig = go.Figure(go.Pie(
+                    labels=counts.index, values=counts.values, hole=0.5,
+                    marker=dict(colors=PIE_COLORS), textfont=dict(color=theme["text"]),
+                ))
+                st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
+            else:
+                missing_data_card(t("no_payments"))
+
+    with col_right:
+        with st.container(border=True):
+            st.markdown(f'<div class="card-title">{t("chart_installments_basket")}</div>', unsafe_allow_html=True)
+            if installments_col and "price" in valid.columns:
+                v = valid.dropna(subset=[installments_col])
+                v = v[v[installments_col] > 0]
+                if not v.empty:
+                    by_installment = v.groupby(installments_col)["price"].mean().reset_index()
+                    by_installment = by_installment[by_installment[installments_col] <= 18]
+                    fig = go.Figure(go.Bar(
+                        x=by_installment[installments_col], y=by_installment["price"],
+                        marker_color=COLORS["accent2"],
+                    ))
+                    fig.update_xaxes(title="Nombre de versements" if st.session_state.lang == "FR" else "Number of installments")
+                    fig.update_yaxes(title="Panier moyen (R$)" if st.session_state.lang == "FR" else "Avg basket (R$)")
+                    st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
+                else:
+                    missing_data_card(t("no_payments"))
+            else:
+                missing_data_card(t("no_payments"))
+
+
+# ============================================================================
+# SECTION: CUSTOMERS (RFM business, sans clustering ML)
+# ============================================================================
+def compute_rfm(valid, reference_date, lang):
+    rfm = valid.groupby("customer_unique_id").agg(
+        recency=("purchased_at", lambda x: (reference_date - x.max()).days if x.notna().any() else np.nan),
+        frequency=("order_id", "nunique"),
+        monetary=("price", "sum"),
+    ).dropna()
+
+    try:
+        rfm["R_score"] = pd.qcut(rfm["recency"], 5, labels=[5, 4, 3, 2, 1], duplicates="drop").astype(int)
+        rfm["F_score"] = pd.qcut(rfm["frequency"].rank(method="first"), 5, labels=[1, 2, 3, 4, 5], duplicates="drop").astype(int)
+        rfm["M_score"] = pd.qcut(rfm["monetary"], 5, labels=[1, 2, 3, 4, 5], duplicates="drop").astype(int)
+    except (ValueError, IndexError):
+        # Pas assez de valeurs distinctes pour découper en quintiles : on retombe sur un score simplifié.
+        rfm["R_score"] = pd.cut(rfm["recency"], bins=[-1, 30, 90, 180, 365, float("inf")], labels=[5, 4, 3, 2, 1]).astype(int)
+        rfm["F_score"] = np.where(rfm["frequency"] > 1, 4, 2)
+        rfm["M_score"] = pd.qcut(rfm["monetary"].rank(method="first"), min(5, rfm["monetary"].nunique()),
+                                  labels=False, duplicates="drop") + 1
+
+    t_ = TRANSLATIONS[lang]
+
+    def label_row(row):
+        r, f = row["R_score"], row["F_score"]
+        if r >= 4 and f >= 4:
+            return t_["rfm_champions"]
+        if r >= 3 and f >= 3:
+            return t_["rfm_loyal"]
+        if r >= 4 and f <= 2:
+            return t_["rfm_new"]
+        if r <= 2 and f >= 3:
+            return t_["rfm_at_risk"]
+        if r <= 2 and f <= 2:
+            return t_["rfm_lost"]
+        return t_["rfm_standard"]
+
+    rfm["segment"] = rfm.apply(label_row, axis=1)
+    return rfm
+
+
 def display_customers(df, df_all, reference_date):
     if "price" not in df.columns:
         st.warning(t("no_customers"))
@@ -1268,14 +1638,10 @@ def display_customers(df, df_all, reference_date):
         st.warning(t("no_customers"))
         return
 
-    rfm = valid.groupby("customer_unique_id").agg(
-        recency=("purchased_at", lambda x: (reference_date - x.max()).days if x.notna().any() else np.nan),
-        frequency=("order_id", "nunique"),
-        monetary=("price", "sum"),
-    )
-
-    rfm["segment"] = pd.cut(rfm["recency"], bins=[-1, 30, 90, 180, 365, float("inf")],
-                             labels=["Actif", "Recent", "Moyen", "Ancien", "Inactif"])
+    rfm = compute_rfm(valid, reference_date, st.session_state.lang)
+    if rfm.empty:
+        st.warning(t("no_customers"))
+        return
 
     repeat_rate = (rfm["frequency"] > 1).mean() * 100
     churn_rate = (rfm["recency"] > 365).mean() * 100
@@ -1298,7 +1664,7 @@ def display_customers(df, df_all, reference_date):
                 labels=seg_counts.index,
                 values=seg_counts.values,
                 hole=0.5,
-                marker=dict(colors=[COLORS["accent"], COLORS["accent2"], COLORS["primary_light"], COLORS["positive"], COLORS["negative"]]),
+                marker=dict(colors=PIE_COLORS),
                 textfont=dict(color=theme["text"])
             ))
             st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
@@ -1316,6 +1682,15 @@ def display_customers(df, df_all, reference_date):
                 textposition="outside"
             ))
             st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
+
+    with st.container(border=True):
+        st.markdown('<div class="card-title">R × F × M (échantillon)</div>', unsafe_allow_html=True)
+        fig = px.scatter(
+            rfm.reset_index(), x="frequency", y="monetary", color="segment",
+            size="recency", size_max=18, opacity=0.6,
+            color_discrete_sequence=PIE_COLORS,
+        )
+        st.plotly_chart(style_fig(fig, height=300), use_container_width=True, config={"displayModeBar": False})
 
 
 # ============================================================================
@@ -1376,8 +1751,7 @@ def display_finance(df, df_all):
                     labels=cat_rev.index,
                     values=cat_rev.values,
                     hole=0.5,
-                    marker=dict(colors=[COLORS["accent"], COLORS["accent2"], COLORS["primary_light"],
-                                         COLORS["positive"], COLORS["negative"], "#8A7A5A"]),
+                    marker=dict(colors=PIE_COLORS),
                     textfont=dict(color=theme["text"])
                 ))
                 st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
@@ -1494,6 +1868,49 @@ def detect_problems(df, reference_date, lang):
                                               "High geographic revenue concentration"),
                                   "severity": "low", "description": desc, "action": action})
 
+    # 6. Concentration vendeurs
+    if "seller_id" in valid.columns and "price" in valid.columns:
+        base = valid[valid["price"] > 0]
+        rev_by_seller = base.groupby("seller_id")["price"].sum().sort_values(ascending=False)
+        total = rev_by_seller.sum()
+        n_sellers = rev_by_seller.shape[0]
+        if total > 0 and n_sellers > 0:
+            top10_n = max(1, int(np.ceil(n_sellers * 0.1)))
+            top10_share = rev_by_seller.iloc[:top10_n].sum() / total * 100
+            if top10_share >= 60:
+                desc = _L(lang,
+                          f"Les 10% de vendeurs les plus gros génèrent {top10_share:.1f}% du CA total.",
+                          f"The top 10% of sellers generate {top10_share:.1f}% of total revenue.")
+                action = _L(lang,
+                            "Diversifier le portefeuille vendeurs pour réduire le risque de dépendance à quelques "
+                            "gros comptes (perte de vendeur, rupture de stock).",
+                            "Diversify the seller portfolio to reduce dependency risk on a few large accounts "
+                            "(seller churn, stockouts).")
+                problems.append({"title": _L(lang, "Forte concentration du CA sur peu de vendeurs",
+                                              "High revenue concentration among few sellers"),
+                                  "severity": "low", "description": desc, "action": action})
+
+    # 7. Paiement en plusieurs fois et panier
+    installments_col = "max_installments" if "max_installments" in valid.columns else (
+        "payment_installments" if "payment_installments" in valid.columns else None)
+    if installments_col and "price" in valid.columns:
+        v = valid.dropna(subset=[installments_col])
+        v = v[v[installments_col] > 0]
+        if len(v) >= 30:
+            high_installments_share = (v[installments_col] >= 10).mean() * 100
+            if high_installments_share >= 15:
+                desc = _L(lang,
+                          f"{high_installments_share:.1f}% des commandes sont payées en 10 versements ou plus.",
+                          f"{high_installments_share:.1f}% of orders are paid in 10+ installments.")
+                action = _L(lang,
+                            "Surveiller le risque d'impayés sur les paniers à fort nombre de versements et évaluer "
+                            "l'intérêt d'un plafond ou de frais de financement adaptés.",
+                            "Monitor default risk on baskets with many installments and evaluate a cap or adapted "
+                            "financing fees.")
+                problems.append({"title": _L(lang, "Forte proportion de paiements longs (10+ versements)",
+                                              "High share of long installment plans (10+)"),
+                                  "severity": "low", "description": desc, "action": action})
+
     return problems
 
 
@@ -1546,7 +1963,7 @@ def display_synthese(df, lang):
         """, unsafe_allow_html=True)
 
     with col_content:
-        st.markdown(f"""
+        st.markdown("""
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
             <span class="sonar-dot"></span>
             <span style="font-weight:600; font-size:1rem;">Analyse des données</span>
@@ -1660,6 +2077,8 @@ def main():
         t('nav_geo'): lambda d, da: display_geo(d, da),
         t('nav_logistics'): lambda d, da: display_logistics(d, da),
         t('nav_satisfaction'): lambda d, da: display_satisfaction(d, da),
+        t('nav_sellers'): lambda d, da: display_sellers(d, da),
+        t('nav_payments'): lambda d, da: display_payments(d, da),
         t('nav_customers'): lambda d, da: display_customers(d, da, reference_date),
         t('nav_finance'): lambda d, da: display_finance(d, da),
         t('nav_problems'): lambda d, da: display_problems(d, da, lang, reference_date),
