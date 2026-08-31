@@ -278,8 +278,6 @@ TRANSLATIONS = {
 # IA / INSIGHTS 
 # ============================================================================
 def generate_insights(df, lang, domain="general"):
-    """Genere des insights structures."""
-    t_ = TRANSLATIONS[lang]
     insights = {
         "ce_qui_sest_passe": [],
         "pourquoi": [],
@@ -330,7 +328,6 @@ def generate_insights(df, lang, domain="general"):
             f"Note moyenne des avis: {avg_score:.1f}/5."
         )
 
-    # --- POURQUOI ---
     if "is_late" in valid.columns and valid["is_late"].mean() > 0.1:
         if "customer_state" in valid.columns:
             by_state = valid.groupby("customer_state")["is_late"].mean().sort_values(ascending=False)
@@ -353,7 +350,6 @@ def generate_insights(df, lang, domain="general"):
                     f"La catégorie '{by_cat.index[0]}' a la note la plus basse ({by_cat.iloc[0]:.2f}/5)."
                 )
 
-    # --- ATTENTION ---
     if "seller_id" in valid.columns and "price" in valid.columns:
         rev_by_seller = valid.groupby("seller_id")["price"].sum().sort_values(ascending=False)
         total = rev_by_seller.sum()
@@ -381,7 +377,6 @@ def generate_insights(df, lang, domain="general"):
                 f"Faible fidélisation: seulement {repeat_rate:.1f}% des clients réachètent."
             )
 
-    # --- RECOMMANDATIONS ---
     if "is_late" in valid.columns and valid["is_late"].mean() > 0.1:
         insights["recommandations"].append(
             "Renégocier les délais avec les transporteurs sur les zones les plus en retard."
@@ -415,7 +410,6 @@ def generate_insights(df, lang, domain="general"):
 
 
 def answer_question(q, df, lang):
-    """Repond aux questions sur les données."""
     q_lower = q.lower()
 
     if any(w in q_lower for w in ["chiffre", "ca", "revenue", "vente", "sales"]):
@@ -518,15 +512,14 @@ html, body, [class*="css"] {{
 }}
 
 .block-container {{
-    padding-top: 0.5rem;
+    padding-top: 1.8rem;
     padding-bottom: 2.5rem;
     max-width: 1300px;
 }}
 
-/* Masquer le header Streamlit par défaut */
-header[data-testid="stHeader"] {{
-    display: none;
-}}
+/* NE PAS masquer le header - on le laisse visible pour le bouton hamburger */
+/* header[data-testid="stHeader"] {{ display: none; }} */
+
 
 [data-testid="stSidebar"] {{
     background: {theme["sidebar"]};
@@ -550,34 +543,6 @@ header[data-testid="stHeader"] {{
     border: none;
     border-top: 1px solid {theme["border"]};
     margin: 14px 0 16px 0;
-}}
-
-/* Styles pour les onglets principaux en haut */
-.main-tabs {{
-    display: flex;
-    gap: 4px;
-    margin-bottom: 16px;
-    border-bottom: 1px solid {theme["border"]};
-    padding-bottom: 4px;
-}}
-.main-tab {{
-    padding: 10px 20px;
-    border-radius: 8px 8px 0 0;
-    font-weight: 500;
-    font-size: 0.9rem;
-    color: {theme["muted"]};
-    cursor: pointer;
-    transition: all 0.2s;
-    background: transparent;
-    border: none;
-}}
-.main-tab:hover {{
-    background: rgba(201, 168, 76, 0.08);
-}}
-.main-tab.active {{
-    color: {COLORS["accent"]};
-    border-bottom: 3px solid {COLORS["accent"]};
-    font-weight: 600;
 }}
 
 .card {{
@@ -631,15 +596,6 @@ header[data-testid="stHeader"] {{
     font-size: 0.75rem;
     font-weight: 400;
     margin-top: 4px;
-}}
-
-.nav-label {{
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: {theme["muted"]};
-    font-weight: 600;
-    padding: 0 8px 8px 8px;
 }}
 
 .filter-section {{
@@ -814,10 +770,6 @@ footer {{visibility: hidden;}}
     border-radius: 50%;
     background: {COLORS["positive"]};
     margin-right: 6px;
-}}
-
-.sub-tabs {{
-    margin-bottom: 12px;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -1034,12 +986,10 @@ def generate_avatar_b64():
 
 
 def display_subtabs():
-    """Affiche les sous-onglets pour chaque section."""
     return st.tabs([t("sub_main"), t("sub_problems"), t("sub_synthese"), t("sub_chat")])
 
 
 def display_insights_section(insights, lang):
-    """Affiche les insights structurés."""
     labels = {
         "ce_qui_sest_passe": "Ce qui s'est passé",
         "pourquoi": "Pourquoi (causes)",
@@ -1895,23 +1845,19 @@ def main():
         st.error("Impossible de charger les données. Vérifiez que le fichier 'data/fct_orders.parquet' existe.")
         st.stop()
 
-    # Récupérer les filtres depuis la sidebar
     filters = sidebar(df_all)
     df = apply_filters(df_all, filters)
 
     reference_date = df_all["purchased_at"].max() if "purchased_at" in df_all.columns else pd.Timestamp.now()
     lang = st.session_state.lang
 
+    # Titre de la page
     st.markdown(f'<div class="page-title">{t("app_title")}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="page-subtitle">{t("app_subtitle")}</div>', unsafe_allow_html=True)
 
-    # Onglets principaux en haut (navigation horizontale)
-    tabs = [t('tab_sales'), t('tab_logistics'), t('tab_sellers'), t('tab_customers')]
+    # Onglets principaux en haut
+    main_tabs = st.tabs([t('tab_sales'), t('tab_logistics'), t('tab_sellers'), t('tab_customers')])
     
-    # Utiliser st.tabs pour les onglets principaux
-    main_tabs = st.tabs(tabs)
-    
-    # Contenu de chaque onglet
     with main_tabs[0]:
         display_sales_market(df, df_all, lang, reference_date)
     
