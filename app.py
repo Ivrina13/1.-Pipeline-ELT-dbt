@@ -79,110 +79,100 @@ TRANSLATIONS = {
     "FR": {
         "app_title": "Olist Analytics",
         "app_subtitle": "Tableau de bord e-commerce",
-        # Onglets principaux
-        "tab_sales": "Ventes & Marché",
+        "tab_sales": "Ventes & Marche",
         "tab_logistics": "Logistique & Satisfaction",
         "tab_sellers": "Vendeurs & Paiements",
         "tab_customers": "Clients (RFM)",
-        # Sous-onglets
         "sub_main": "Vue principale",
-        "sub_problems": "Problèmes & Actions",
-        "sub_synthese": "Synthèse IA",
+        "sub_problems": "Problemes & Actions",
+        "sub_synthese": "Synthese IA",
         "sub_chat": "Assistant IA",
-        # Filtres
-        "theme_toggle": "Thème clair",
-        "theme_toggle_dark": "Thème sombre",
+        "theme_toggle": "Theme clair",
+        "theme_toggle_dark": "Theme sombre",
         "filters_title": "Filtres",
-        "filter_period": "Période",
-        "filter_state": "État",
+        "filter_period": "Periode",
+        "filter_state": "Etat",
         "filter_status": "Statut",
-        "filter_category": "Catégorie",
+        "filter_category": "Categorie",
         "filter_min_score": "Note minimale",
-        "filter_reset": "Réinitialiser",
+        "filter_reset": "Reinitialiser",
         "data_rows": "lignes disponibles",
-        # KPI
         "kpi_revenue": "Chiffre d'affaires",
         "kpi_orders": "Commandes",
         "kpi_customers": "Clients uniques",
         "kpi_avg_basket": "Panier moyen",
-        "kpi_avg_delivery": "Délai moyen",
-        "kpi_median_delivery": "Délai médian",
+        "kpi_avg_delivery": "Delai moyen",
+        "kpi_median_delivery": "Delai median",
         "kpi_late_rate": "Taux de retard",
         "kpi_good_reviews": "Bonnes notes (4-5)",
         "kpi_bad_reviews": "Mauvaises notes (1-2)",
         "kpi_review_count": "Volume d'avis",
         "kpi_avg_score": "Note moyenne",
-        "kpi_repeat_rate": "Taux de réachat",
+        "kpi_repeat_rate": "Taux de reachat",
         "kpi_churn_rate": "Inactifs (+1 an)",
         "kpi_total_customers": "Total clients",
-        "kpi_top_state_revenue": "1er État (CA)",
-        "kpi_top_state_orders": "1er État (commandes)",
-        "kpi_states_covered": "États couverts",
+        "kpi_top_state_revenue": "1er Etat (CA)",
+        "kpi_top_state_orders": "1er Etat (commandes)",
+        "kpi_states_covered": "Etats couverts",
         "kpi_seller_count": "Vendeurs actifs",
         "kpi_top_seller": "Top vendeur (CA)",
         "kpi_seller_concentration": "CA du top 10% vendeurs",
         "kpi_payment_types": "Moyens de paiement",
         "kpi_avg_installments": "Versements moyens",
-        # Graphiques
-        "chart_sales": "Évolution des ventes",
-        "chart_status": "Répartition des statuts",
-        "chart_categories": "Top catégories",
-        "chart_states": "Top États",
-        "chart_delivery_dist": "Distribution des délais",
-        "chart_delivery_state": "Délai par État (top 12 en volume)",
-        "chart_late_trend": "Évolution du taux de retard",
+        "chart_sales": "Evolution des ventes",
+        "chart_status": "Repartition des statuts",
+        "chart_categories": "Top categories",
+        "chart_states": "Top Etats",
+        "chart_delivery_dist": "Distribution des delais",
+        "chart_delivery_state": "Delai par Etat (top 12 en volume)",
+        "chart_late_trend": "Evolution du taux de retard",
         "chart_score_dist": "Distribution des notes",
-        "chart_score_category": "Note moyenne par catégorie",
-        "chart_delivery_score": "Délai vs note",
+        "chart_score_category": "Note moyenne par categorie",
+        "chart_delivery_score": "Delai vs note",
         "chart_score_price": "Prix vs note",
-        "chart_negative_keywords": "Mots-clés fréquents dans les avis négatifs",
+        "chart_negative_keywords": "Mots-cles frequents dans les avis negatifs",
         "chart_seller_revenue": "Top 10 vendeurs (CA)",
         "chart_seller_pareto": "Concentration du CA par vendeur",
         "chart_seller_score": "Distribution des notes vendeurs",
-        "chart_seller_distance": "Délai selon origine",
-        "chart_payment_type": "Répartition des moyens de paiement",
+        "chart_seller_distance": "Delai selon origine",
+        "chart_payment_type": "Repartition des moyens de paiement",
         "chart_installments_basket": "Panier moyen par nombre de versements",
         "chart_segments": "Segments RFM",
         "chart_top_clients": "Top clients (par CA)",
-        "chart_revenue_cum": "CA cumulé",
-        "chart_revenue_category": "CA par catégorie",
-        # Géographie
+        "chart_revenue_cum": "CA cumule",
+        "chart_revenue_category": "CA par categorie",
         "geo_view_label": "Type de carte",
-        "geo_view_choropleth": "Carte par État",
+        "geo_view_choropleth": "Carte par Etat",
         "geo_view_points": "Carte de points",
-        "geo_table_title": "Classement des États",
-        "geo_fallback_note": "Carte indisponible — repli en graphique à barres.",
-        "geo_intro": "Répartition géographique des ventes et de la logistique.",
-        # Problèmes
-        "problems_intro": "Problèmes détectés automatiquement avec action recommandée.",
-        "problems_none": "Aucun problème significatif détecté.",
-        "problem_action_label": "Action recommandée",
+        "geo_table_title": "Classement des Etats",
+        "geo_fallback_note": "Carte indisponible  repli en graphique a barres.",
+        "geo_intro": "Repartition geographique des ventes et de la logistique.",
+        "problems_intro": "Problemes detectes automatiquement avec action recommandee.",
+        "problems_none": "Aucun probleme significatif detecte.",
+        "problem_action_label": "Action recommandee",
         "severity_high": "Critique",
-        "severity_medium": "À surveiller",
+        "severity_medium": "A surveiller",
         "severity_low": "Point d'attention",
-        # Chat
-        "chat_placeholder": "Posez votre question sur les données...",
-        "chat_intro": "Assistant IA pour analyser les données Olist",
-        "synthese_intro": "Analyse générée automatiquement à partir des données",
-        "stats_expander": "Statistiques détaillées",
-        # Messages d'absence
-        "no_geo": "Données d'État client non disponibles.",
-        "no_delivery": "Données de livraison non disponibles.",
-        "no_reviews": "Données d'avis non disponibles.",
-        "no_customers": "Données clients non disponibles.",
-        "no_finance": "Aucune donnée financière.",
-        "no_sellers": "Colonne 'seller_id' non trouvée dans fct_orders.parquet.",
-        "no_payments": "Aucune colonne de paiement trouvée.",
-        "no_review_text": "Aucune colonne de texte d'avis trouvée.",
-        # RFM
+        "chat_placeholder": "Posez votre question sur les donnees...",
+        "chat_intro": "Assistant IA pour analyser les donnees Olist",
+        "synthese_intro": "Analyse generee automatiquement a partir des donnees",
+        "stats_expander": "Statistiques detaillees",
+        "no_geo": "Donnees d'Etat client non disponibles.",
+        "no_delivery": "Donnees de livraison non disponibles.",
+        "no_reviews": "Donnees d'avis non disponibles.",
+        "no_customers": "Donnees clients non disponibles.",
+        "no_finance": "Aucune donnee financiere.",
+        "no_sellers": "Colonne 'seller_id' non trouvee dans fct_orders.parquet.",
+        "no_payments": "Aucune colonne de paiement trouvee.",
+        "no_review_text": "Aucune colonne de texte d'avis trouvee.",
         "rfm_champions": "Champions",
-        "rfm_loyal": "Clients fidèles",
+        "rfm_loyal": "Clients fideles",
         "rfm_new": "Nouveaux clients",
-        "rfm_at_risk": "À risque",
+        "rfm_at_risk": "A risque",
         "rfm_lost": "Perdus",
         "rfm_standard": "Standard",
-        "same_state": "Même État",
-        "diff_state": "Autre État",
+        "same_state": "Meme Etat",
+        "diff_state": "Autre Etat",
     },
     "EN": {
         "app_title": "Olist Analytics",
@@ -253,7 +243,7 @@ TRANSLATIONS = {
         "geo_view_choropleth": "Choropleth map",
         "geo_view_points": "Point map",
         "geo_table_title": "State ranking",
-        "geo_fallback_note": "Map unavailable — falling back to bar chart.",
+        "geo_fallback_note": "Map unavailable  falling back to bar chart.",
         "geo_intro": "Geographic distribution of sales and logistics.",
         "problems_intro": "Automatically detected problems with recommended actions.",
         "problems_none": "No significant problem detected.",
@@ -285,10 +275,10 @@ TRANSLATIONS = {
 }
 
 # ============================================================================
-# IA / INSIGHTS — avec structure "Ce qui s'est passé / Pourquoi / Attention / Recommandations"
+# IA / INSIGHTS 
 # ============================================================================
 def generate_insights(df, lang, domain="general"):
-    """Génère des insights structurés : ce qui s'est passé, pourquoi, attention, recommandations."""
+    """Genere des insights structures : ce qui s'est passe, pourquoi, attention, recommandations."""
     t_ = TRANSLATIONS[lang]
     insights = {
         "ce_qui_sest_passe": [],
@@ -298,12 +288,12 @@ def generate_insights(df, lang, domain="general"):
     }
 
     if df.empty:
-        return {"ce_qui_sest_passe": ["Aucune donnée disponible."]}
+        return {"ce_qui_sest_passe": ["Aucune donnee disponible."]}
 
     df = df.copy()
     valid = df[df["price"] > 0] if "price" in df.columns else df
 
-    # --- CE QUI S'EST PASSÉ ---
+    # --- CE QUI S'EST PASSE ---
     if "price" in valid.columns and not valid.empty:
         total_rev = valid["price"].sum()
         n_orders = valid["order_id"].nunique()
@@ -321,13 +311,13 @@ def generate_insights(df, lang, domain="general"):
             if len(monthly) > 1:
                 trend = "en hausse" if monthly.iloc[-1] > monthly.iloc[-2] else "en baisse"
                 insights["ce_qui_sest_passe"].append(
-                    f"Tendance mensuelle: CA {trend} par rapport au mois précédent."
+                    f"Tendance mensuelle: CA {trend} par rapport au mois precedent."
                 )
 
     if "delivery_days" in valid.columns:
         avg_delivery = valid["delivery_days"].mean()
         insights["ce_qui_sest_passe"].append(
-            f"Délai de livraison moyen: {avg_delivery:.1f} jours."
+            f"Delai de livraison moyen: {avg_delivery:.1f} jours."
         )
         if "is_late" in valid.columns:
             late_rate = valid["is_late"].mean() * 100
@@ -347,13 +337,13 @@ def generate_insights(df, lang, domain="general"):
             by_state = valid.groupby("customer_state")["is_late"].mean().sort_values(ascending=False)
             if not by_state.empty and by_state.iloc[0] > 0:
                 insights["pourquoi"].append(
-                    f"Les retards sont concentrés dans l'État {by_state.index[0]} ({by_state.iloc[0]*100:.1f}%)."
+                    f"Les retards sont concentres dans l'Etat {by_state.index[0]} ({by_state.iloc[0]*100:.1f}%)."
                 )
         if "delivery_days" in valid.columns and "avg_review_score" in valid.columns:
             corr = valid[["delivery_days", "avg_review_score"]].dropna().corr().iloc[0, 1]
             if pd.notna(corr) and corr < -0.15:
                 insights["pourquoi"].append(
-                    f"Corrélation délai/note: {corr:.2f} — les retards impactent directement la satisfaction."
+                    f"Correlation delai/note: {corr:.2f}  les retards impactent directement la satisfaction."
                 )
 
     if "avg_review_score" in valid.columns:
@@ -361,10 +351,10 @@ def generate_insights(df, lang, domain="general"):
             by_cat = valid.groupby("product_category")["avg_review_score"].mean().sort_values()
             if not by_cat.empty and by_cat.iloc[0] < 3.5:
                 insights["pourquoi"].append(
-                    f"La catégorie '{by_cat.index[0]}' a la note la plus basse ({by_cat.iloc[0]:.2f}/5)."
+                    f"La categorie '{by_cat.index[0]}' a la note la plus basse ({by_cat.iloc[0]:.2f}/5)."
                 )
 
-    # --- ATTENTION (anomalies, risques, opportunités) ---
+    # --- ATTENTION (anomalies, risques, opportunites) ---
     if "seller_id" in valid.columns and "price" in valid.columns:
         rev_by_seller = valid.groupby("seller_id")["price"].sum().sort_values(ascending=False)
         total = rev_by_seller.sum()
@@ -374,14 +364,14 @@ def generate_insights(df, lang, domain="general"):
             top10_share = rev_by_seller.iloc[:top10_n].sum() / total * 100
             if top10_share >= 60:
                 insights["attention"].append(
-                    f"Concentration élevée: les 10% de vendeurs génèrent {top10_share:.1f}% du CA."
+                    f"Concentration elevee: les 10% de vendeurs generent {top10_share:.1f}% du CA."
                 )
 
     if "customer_state" in valid.columns and "price" in valid.columns:
         rev_by_state = valid.groupby("customer_state")["price"].sum().sort_values(ascending=False)
         if not rev_by_state.empty and rev_by_state.iloc[0] / rev_by_state.sum() > 0.35:
             insights["attention"].append(
-                f"Dépendance géographique: {rev_by_state.index[0]} concentre plus de 35% du CA."
+                f"Dependance geographique: {rev_by_state.index[0]} concentre plus de 35% du CA."
             )
 
     if "customer_unique_id" in valid.columns:
@@ -389,23 +379,23 @@ def generate_insights(df, lang, domain="general"):
         repeat_rate = (freq > 1).mean() * 100
         if repeat_rate < 15:
             insights["attention"].append(
-                f"Faible fidélisation: seulement {repeat_rate:.1f}% des clients réachètent."
+                f"Faible fidelisation: seulement {repeat_rate:.1f}% des clients reachetent."
             )
 
     # --- RECOMMANDATIONS ---
     if "is_late" in valid.columns and valid["is_late"].mean() > 0.1:
         insights["recommandations"].append(
-            "Renégocier les délais avec les transporteurs sur les zones les plus en retard."
+            "Renegocier les delais avec les transporteurs sur les zones les plus en retard."
         )
     if "avg_review_score" in valid.columns and valid["avg_review_score"].mean() < 4.0:
         insights["recommandations"].append(
-            "Auditer les produits des catégories les moins bien notées avec les vendeurs concernés."
+            "Auditer les produits des categories les moins bien notees avec les vendeurs concernes."
         )
     if "customer_unique_id" in valid.columns:
         repeat_rate = (valid.groupby("customer_unique_id")["order_id"].nunique() > 1).mean() * 100
         if repeat_rate < 15:
             insights["recommandations"].append(
-                "Lancer un programme de fidélité ou des relances post-achat."
+                "Lancer un programme de fidelite ou des relances post-achat."
             )
     if "seller_id" in valid.columns and "price" in valid.columns:
         rev_by_seller = valid.groupby("seller_id")["price"].sum().sort_values(ascending=False)
@@ -416,67 +406,65 @@ def generate_insights(df, lang, domain="general"):
             top10_share = rev_by_seller.iloc[:top10_n].sum() / total * 100
             if top10_share >= 60:
                 insights["recommandations"].append(
-                    "Diversifier le portefeuille vendeurs pour réduire la dépendance."
+                    "Diversifier le portefeuille vendeurs pour reduire la dependance."
                 )
 
     if not insights["ce_qui_sest_passe"]:
-        insights["ce_qui_sest_passe"].append("Données insuffisantes pour l'analyse.")
+        insights["ce_qui_sest_passe"].append("Donnees insuffisantes pour l'analyse.")
 
     return insights
 
 
 def answer_question(q, df, lang):
-    """Répond aux questions sur les données."""
+    """Repond aux questions sur les donnees."""
     q_lower = q.lower()
-    t_ = TRANSLATIONS[lang]
 
     if any(w in q_lower for w in ["chiffre", "ca", "revenue", "vente", "sales"]):
         if "price" in df.columns:
             total = df["price"].sum()
             return f"Le chiffre d'affaires total est de {total:,.0f} R$."
-        return "Données de CA non disponibles."
+        return "Donnees de CA non disponibles."
 
     if any(w in q_lower for w in ["livraison", "delivery", "retard", "late"]):
         if "delivery_days" in df.columns:
             avg = df["delivery_days"].mean()
             late = (df["is_late"].mean() * 100) if "is_late" in df.columns else 0
-            return f"Délai moyen: {avg:.1f} jours. Taux de retard: {late:.1f}%."
-        return "Données de livraison non disponibles."
+            return f"Delai moyen: {avg:.1f} jours. Taux de retard: {late:.1f}%."
+        return "Donnees de livraison non disponibles."
 
     if any(w in q_lower for w in ["note", "avis", "review", "satisfaction"]):
         if "avg_review_score" in df.columns:
             avg = df["avg_review_score"].mean()
             return f"Note moyenne des avis: {avg:.1f}/5."
-        return "Données d'avis non disponibles."
+        return "Donnees d'avis non disponibles."
 
     if any(w in q_lower for w in ["client", "customer"]):
         if "customer_unique_id" in df.columns:
             n = df["customer_unique_id"].nunique()
             return f"La base clients compte {n:,} clients uniques."
-        return "Données clients non disponibles."
+        return "Donnees clients non disponibles."
 
-    if any(w in q_lower for w in ["état", "etat", "state", "région", "region"]):
+    if any(w in q_lower for w in ["etat", "state", "region"]):
         if "customer_state" in df.columns and "price" in df.columns:
             top = df.groupby("customer_state")["price"].sum().sort_values(ascending=False)
             if not top.empty:
-                return f"L'État générant le plus de CA est {top.index[0]} avec {top.iloc[0]:,.0f} R$."
-        return "Données géographiques non disponibles."
+                return f"L'Etat generant le plus de CA est {top.index[0]} avec {top.iloc[0]:,.0f} R$."
+        return "Donnees geographiques non disponibles."
 
     if any(w in q_lower for w in ["vendeur", "seller"]):
         if "seller_id" in df.columns:
             n = df["seller_id"].nunique()
             return f"La marketplace compte {n:,} vendeurs actifs."
-        return "Données vendeurs non disponibles."
+        return "Donnees vendeurs non disponibles."
 
     if any(w in q_lower for w in ["paiement", "payment"]):
         if "payment_type" in df.columns:
             top = df["payment_type"].value_counts()
-            return f"Le moyen de paiement le plus utilisé est '{top.index[0]}' ({top.iloc[0]:,} commandes)."
-        return "Données de paiement non disponibles."
+            return f"Le moyen de paiement le plus utilise est '{top.index[0]}' ({top.iloc[0]:,} commandes)."
+        return "Donnees de paiement non disponibles."
 
-    return ("Je peux vous renseigner sur: CA, livraisons, avis clients, géographie, vendeurs, paiements "
-            "et statistiques générales.")
-
+    return ("Je peux vous renseigner sur: CA, livraisons, avis clients, geographie, vendeurs, paiements "
+            "et statistiques generales.")
 
 # ============================================================================
 # THEME
@@ -1037,28 +1025,32 @@ def display_subtabs():
 
 
 def display_insights_section(insights, lang):
-    """Affiche les insights structurés en 4 sections."""
+    """Affiche les insights structures en 4 sections."""
     labels = {
-        "ce_qui_sest_passe": "📊 Ce qui s'est passé",
-        "pourquoi": "🔍 Pourquoi (causes)",
-        "attention": "⚠️ Ce qui mérite votre attention",
-        "recommandations": "🎯 Recommandations"
+        "ce_qui_sest_passe": "Ce qui s'est passe",
+        "pourquoi": "Pourquoi (causes)",
+        "attention": "Ce qui merite votre attention",
+        "recommandations": "Recommandations"
     }
     en_labels = {
-        "ce_qui_sest_passe": "📊 What happened",
-        "pourquoi": "🔍 Why (causes)",
-        "attention": "⚠️ What needs your attention",
-        "recommandations": "🎯 Recommendations"
+        "ce_qui_sest_passe": "What happened",
+        "pourquoi": "Why (causes)",
+        "attention": "What needs your attention",
+        "recommandations": "Recommendations"
     }
     lbls = en_labels if lang == "EN" else labels
 
+    # Determine border color for each section
+    border_colors = [COLORS["accent"], COLORS["accent2"], COLORS["negative"], COLORS["positive"]]
+    
     col1, col2 = st.columns(2)
     for idx, (key, items) in enumerate(insights.items()):
         if items:
             col = col1 if idx % 2 == 0 else col2
+            border_color = border_colors[idx % len(border_colors)]
             with col:
                 st.markdown(f"""
-                <div class="insight-card" style="border-left-color: {COLORS['accent' if idx == 0 else 'accent2' if idx == 1 else COLORS['negative'] if idx == 2 else COLORS['positive']}">
+                <div class="insight-card" style="border-left-color: {border_color};">
                     <div class="insight-title">{lbls.get(key, key)}</div>
                     <div class="insight-body">{'<br>• '.join(items)}</div>
                 </div>
@@ -1066,7 +1058,7 @@ def display_insights_section(insights, lang):
 
 
 def display_problems_section(problems, lang):
-    """Affiche les problèmes détectés."""
+    """Affiche les problemes detectes."""
     if not problems:
         st.info(t("problems_none"))
         return
@@ -1103,7 +1095,7 @@ def display_chat_section(df, lang):
         </div>
         """, unsafe_allow_html=True)
     with reset_col:
-        reset_label = "Réinitialiser" if lang == "FR" else "Reset"
+        reset_label = "Reinitialiser" if lang == "FR" else "Reset"
         if st.button(reset_label, key="reset_chat", use_container_width=True):
             st.session_state.chat_history = []
             st.rerun()
@@ -1133,7 +1125,7 @@ def display_chat_section(df, lang):
 
 
 def detect_problems(df, reference_date, lang):
-    """Détecte des problèmes business à partir de seuils calculés."""
+    """Detecte des problemes business a partir de seuils calcules."""
     problems = []
     if df.empty:
         return problems
@@ -1145,18 +1137,18 @@ def detect_problems(df, reference_date, lang):
         late_rate = valid["is_late"].mean() * 100
         sev = "high" if late_rate >= 15 else ("medium" if late_rate >= 8 else None)
         if sev:
-            desc = _L(lang, f"{late_rate:.1f}% des commandes sont livrées en retard.",
+            desc = _L(lang, f"{late_rate:.1f}% des commandes sont livrees en retard.",
                       f"{late_rate:.1f}% of orders are delivered late.")
             if "customer_state" in valid.columns:
                 by_state = valid.groupby("customer_state")["is_late"].mean().sort_values(ascending=False)
                 if not by_state.empty and by_state.iloc[0] > 0:
                     desc += _L(lang,
-                               f" L'État le plus touché est {by_state.index[0]} ({by_state.iloc[0]*100:.1f}%).",
+                               f" L'Etat le plus touche est {by_state.index[0]} ({by_state.iloc[0]*100:.1f}%).",
                                f" The most affected state is {by_state.index[0]} ({by_state.iloc[0]*100:.1f}%).")
             action = _L(lang,
-                        "Renégocier les délais avec les transporteurs sur les zones les plus en retard.",
+                        "Renegocier les delais avec les transporteurs sur les zones les plus en retard.",
                         "Renegotiate carrier lead times for the most delayed zones.")
-            problems.append({"title": _L(lang, "Taux de retard de livraison élevé", "High delivery delay rate"),
+            problems.append({"title": _L(lang, "Taux de retard de livraison eleve", "High delivery delay rate"),
                              "severity": sev, "description": desc, "action": action})
 
     # 2. Satisfaction sous la moyenne
@@ -1170,43 +1162,43 @@ def detect_problems(df, reference_date, lang):
                 by_cat = valid.groupby("product_category")["avg_review_score"].mean().sort_values()
                 if not by_cat.empty:
                     desc += _L(lang,
-                               f" La catégorie la moins bien notée est '{by_cat.index[0]}' ({by_cat.iloc[0]:.2f}/5).",
+                               f" La categorie la moins bien notee est '{by_cat.index[0]}' ({by_cat.iloc[0]:.2f}/5).",
                                f" The lowest-rated category is '{by_cat.index[0]}' ({by_cat.iloc[0]:.2f}/5).")
             action = _L(lang,
-                        "Auditer les produits des catégories les moins bien notées avec les vendeurs.",
+                        "Auditer les produits des categories les moins bien notees avec les vendeurs.",
                         "Audit products in the lowest-rated categories with the sellers.")
             problems.append({"title": _L(lang, "Satisfaction client sous la moyenne", "Below-average satisfaction"),
                              "severity": sev, "description": desc, "action": action})
 
-    # 3. Corrélation délai / note
+    # 3. Correlation delai / note
     if "delivery_days" in valid.columns and "avg_review_score" in valid.columns:
         d = valid[["delivery_days", "avg_review_score"]].dropna()
         if len(d) >= 30:
             corr = d["delivery_days"].corr(d["avg_review_score"])
             if pd.notna(corr) and corr <= -0.2:
                 desc = _L(lang,
-                          f"Corrélation délai/note : {corr:.2f} — plus la livraison est longue, plus la note baisse.",
-                          f"Delay/rating correlation: {corr:.2f} — the longer the delivery, the lower the rating.")
+                          f"Correlation delai/note : {corr:.2f}  plus la livraison est longue, plus la note baisse.",
+                          f"Delay/rating correlation: {corr:.2f}  the longer the delivery, the lower the rating.")
                 action = _L(lang,
-                            "Prioriser la réduction des délais sur les commandes les plus à risque.",
+                            "Prioriser la reduction des delais sur les commandes les plus a risque.",
                             "Prioritize reducing delivery time for at-risk orders.")
-                problems.append({"title": _L(lang, "Les retards dégradent la satisfaction",
+                problems.append({"title": _L(lang, "Les retards degradent la satisfaction",
                                              "Delays hurt satisfaction"),
                                  "severity": "medium", "description": desc, "action": action})
 
-    # 4. Fidélisation
+    # 4. Fidelisation
     if "customer_unique_id" in valid.columns and "price" in valid.columns:
         base = valid[valid["price"] > 0]
         if not base.empty:
             freq = base.groupby("customer_unique_id")["order_id"].nunique()
             repeat_rate = (freq > 1).mean() * 100
             if repeat_rate < 10:
-                desc = _L(lang, f"Seulement {repeat_rate:.1f}% des clients ont recommandé au moins une fois.",
+                desc = _L(lang, f"Seulement {repeat_rate:.1f}% des clients ont recommande au moins une fois.",
                           f"Only {repeat_rate:.1f}% of customers have ordered more than once.")
                 action = _L(lang,
-                            "Mettre en place un programme de fidélité ou des relances post-achat.",
+                            "Mettre en place un programme de fidelite ou des relances post-achat.",
                             "Set up a loyalty program or post-purchase follow-ups.")
-                problems.append({"title": _L(lang, "Faible fidélisation client", "Low customer retention"),
+                problems.append({"title": _L(lang, "Faible fidelisation client", "Low customer retention"),
                                  "severity": "medium", "description": desc, "action": action})
 
     return problems
@@ -1228,7 +1220,7 @@ def sidebar(df):
 
         col_lang1, col_lang2 = st.columns(2)
         with col_lang1:
-            if st.button("Français", use_container_width=True):
+            if st.button("Francais", use_container_width=True):
                 st.session_state.lang = "FR"
                 st.rerun()
         with col_lang2:
@@ -1283,7 +1275,7 @@ def sidebar(df):
 
 
 # ============================================================================
-# SECTION: VENTES & MARCHÉ (Overview + Finance + Carte)
+# SECTION: VENTES & MARCHE (Overview + Finance + Carte)
 # ============================================================================
 def display_sales_market(df, df_all, lang, reference_date):
     tab_main, tab_problems, tab_synthese, tab_chat = display_subtabs()
@@ -1324,7 +1316,7 @@ def display_sales_market(df, df_all, lang, reference_date):
         col_left, col_right = st.columns([1.6, 1])
 
         with col_left:
-            # Évolution des ventes
+            # Evolution des ventes
             with st.container(border=True):
                 st.markdown(f'<div class="card-title">{t("chart_sales")}</div>', unsafe_allow_html=True)
                 if "purchased_at" in valid.columns and not valid.empty:
@@ -1338,7 +1330,7 @@ def display_sales_market(df, df_all, lang, reference_date):
                     ))
                     st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
 
-            # Top catégories
+            # Top categories
             if "product_category" in valid.columns:
                 with st.container(border=True):
                     st.markdown(f'<div class="card-title">{t("chart_categories")}</div>', unsafe_allow_html=True)
@@ -1353,7 +1345,7 @@ def display_sales_market(df, df_all, lang, reference_date):
                     ))
                     st.plotly_chart(style_fig(fig, height=240), use_container_width=True, config={"displayModeBar": False})
 
-            # CA cumulé
+            # CA cumule
             with st.container(border=True):
                 st.markdown(f'<div class="card-title">{t("chart_revenue_cum")}</div>', unsafe_allow_html=True)
                 if "month_year" in valid.columns:
@@ -1385,7 +1377,7 @@ def display_sales_market(df, df_all, lang, reference_date):
                     ))
                     st.plotly_chart(style_fig(fig, height=240), use_container_width=True, config={"displayModeBar": False})
 
-            # Top États
+            # Top Etats
             if "customer_state" in valid.columns:
                 with st.container(border=True):
                     st.markdown(f'<div class="card-title">{t("chart_states")}</div>', unsafe_allow_html=True)
@@ -1397,7 +1389,7 @@ def display_sales_market(df, df_all, lang, reference_date):
                     ))
                     st.plotly_chart(style_fig(fig, height=200), use_container_width=True, config={"displayModeBar": False})
 
-            # Carte géographique
+            # Carte geographique
             with st.container(border=True):
                 st.markdown(f'<div class="card-title">{t("nav_geo")}</div>', unsafe_allow_html=True)
                 if "customer_state" in valid.columns:
@@ -1437,7 +1429,6 @@ def display_sales_market(df, df_all, lang, reference_date):
 
     with tab_problems:
         problems = detect_problems(df, reference_date, lang)
-        # Filtrer les problèmes pertinents pour Ventes & Marché
         problems_filtered = [p for p in problems if any(k in p["title"].lower() for k in ["geographique", "concentration", "fidelisation", "retard"])]
         display_problems_section(problems_filtered, lang)
 
@@ -1470,20 +1461,19 @@ def display_logistics_satisfaction(df, df_all, lang, reference_date):
         has_delivery = "delivery_days" in df.columns
         has_reviews = "avg_review_score" in df.columns
 
-        c1, c2, c3 = st.columns(3)
         if has_delivery:
             valid_del = df[df["delivery_days"].notna()]
             avg_delivery = valid_del["delivery_days"].mean() if not valid_del.empty else 0
             median_delivery = valid_del["delivery_days"].median() if not valid_del.empty else 0
             late_rate = valid_del["is_late"].mean() * 100 if "is_late" in valid_del.columns else 0
+            
+            c1, c2, c3 = st.columns(3)
             with c1:
                 metric_card(t("kpi_avg_delivery"), f"{avg_delivery:.1f} j", featured=True)
             with c2:
                 metric_card(t("kpi_median_delivery"), f"{median_delivery:.1f} j")
             with c3:
                 metric_card(t("kpi_late_rate"), f"{late_rate:.1f}%")
-        else:
-            missing_data_card(t("no_delivery"))
 
         # KPIs Satisfaction
         if has_reviews:
@@ -1555,7 +1545,7 @@ def display_logistics_satisfaction(df, df_all, lang, reference_date):
                     fig.update_traces(marker_color=COLORS["accent"])
                     st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
 
-        # Graphiques supplémentaires
+        # Graphiques supplementaires
         col_a, col_b = st.columns(2)
 
         with col_a:
@@ -1567,7 +1557,7 @@ def display_logistics_satisfaction(df, df_all, lang, reference_date):
                     fig.update_traces(marker_color=COLORS["accent2"])
                     st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
 
-            if "customer_state" in valid_del.columns and has_delivery:
+            if "customer_state" in valid_del.columns and has_delivery and not valid_del.empty:
                 with st.container(border=True):
                     st.markdown(f'<div class="card-title">{t("chart_delivery_state")}</div>', unsafe_allow_html=True)
                     top_states = valid_del["customer_state"].value_counts().head(12).index
@@ -1586,7 +1576,7 @@ def display_logistics_satisfaction(df, df_all, lang, reference_date):
                         fig.update_traces(marker_color=COLORS["accent"], marker_size=5)
                         st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
 
-            # Mots-clés négatifs
+            # Mots-cles negatifs
             with st.container(border=True):
                 st.markdown(f'<div class="card-title">{t("chart_negative_keywords")}</div>', unsafe_allow_html=True)
                 text_col = find_review_text_col(df)
@@ -1595,7 +1585,7 @@ def display_logistics_satisfaction(df, df_all, lang, reference_date):
                 else:
                     neg = df.loc[df["avg_review_score"] <= 2, text_col].dropna().astype(str)
                     if neg.empty:
-                        st.info("Aucun avis négatif dans cette sélection.")
+                        st.info("Aucun avis negatif dans cette selection.")
                     else:
                         words = []
                         for txt in neg:
@@ -1715,7 +1705,7 @@ def display_sellers_payments(df, df_all, lang, reference_date):
                         fillcolor=COLORS["accent2"] + "22",
                     ))
                     fig.update_xaxes(title="% des vendeurs" if lang == "FR" else "% of sellers")
-                    fig.update_yaxes(title="% du CA cumulé" if lang == "FR" else "% cumulative revenue")
+                    fig.update_yaxes(title="% du CA cumule" if lang == "FR" else "% cumulative revenue")
                     st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
 
         with col_right:
@@ -1892,7 +1882,7 @@ def display_customers_rfm(df, df_all, lang, reference_date):
                 st.plotly_chart(style_fig(fig, height=280), use_container_width=True, config={"displayModeBar": False})
 
         with st.container(border=True):
-            st.markdown('<div class="card-title">R × F × M (échantillon)</div>', unsafe_allow_html=True)
+            st.markdown('<div class="card-title">R x F x M (echantillon)</div>', unsafe_allow_html=True)
             fig = px.scatter(
                 rfm.reset_index(), x="frequency", y="monetary", color="segment",
                 size="recency", size_max=18, opacity=0.6,
@@ -1924,7 +1914,7 @@ def main():
     df_all = load_data()
 
     if df_all is None:
-        st.error("Impossible de charger les données. Vérifiez que le fichier 'data/fct_orders.parquet' existe.")
+        st.error("Impossible de charger les donnees. Verifiez que le fichier 'data/fct_orders.parquet' existe.")
         st.stop()
 
     nav_selected, filters = sidebar(df_all)
@@ -1949,7 +1939,7 @@ def main():
     st.markdown(f"""
     <hr style="border-color:{theme['border']}; margin-top:32px;">
     <div style="text-align:center; color:{theme['muted']}; font-size:0.7rem; padding:12px 0;">
-        Olist Analytics · Tableau de bord e-commerce · Données Olist
+        Olist Analytics · Tableau de bord e-commerce · Donnees Olist
     </div>
     """, unsafe_allow_html=True)
 
