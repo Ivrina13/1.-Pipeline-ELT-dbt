@@ -530,6 +530,35 @@ html, body, [class*="css"] {{
     padding-top: 1.2rem;
 }}
 
+/* ============================================================
+   SUPPRESSION DU BOUTON SHARE / ETOILE BLANCHE
+   ============================================================ */
+[data-testid="stHeader"] {{
+    display: none !important;
+}}
+
+.stDeployButton {{
+    display: none !important;
+}}
+
+[data-testid="stToolbar"] {{
+    display: none !important;
+}}
+
+[data-testid="stDecoration"] {{
+    display: none !important;
+}}
+
+.stAppViewBlockContainer {{
+    padding-top: 0px !important;
+}}
+
+.stMainBlockContainer {{
+    padding-top: 0px !important;
+}}
+
+/* ============================================================ */
+
 .brand-title {{
     font-size: 1.4rem;
     font-weight: 700;
@@ -1391,7 +1420,7 @@ def display_sales_market(df, df_all, lang, reference_date):
 
             # Carte geographique
             with st.container(border=True):
-                st.markdown(f'<div class="card-title">{t("nav_geo")}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="card-title">{t("geo_view_label")}</div>', unsafe_allow_html=True)
                 if "customer_state" in valid.columns:
                     geo_df = valid.groupby("customer_state").agg(
                         orders=("order_id", "nunique"),
