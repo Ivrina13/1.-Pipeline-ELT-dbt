@@ -473,6 +473,8 @@ if "theme" not in st.session_state:
     st.session_state.theme = "dark"
 if "lang" not in st.session_state:
     st.session_state.lang = "FR"
+if "sidebar_open" not in st.session_state:
+    st.session_state.sidebar_open = True
 
 
 def get_theme():
@@ -524,10 +526,41 @@ html, body, [class*="css"] {{
     max-width: 1300px;
 }}
 
+/* ============================================================
+   SIDEBAR RETRACTABLE AVEC BOUTON HAMBURGER
+   ============================================================ */
 [data-testid="stSidebar"] {{
     background: {theme["sidebar"]};
     border-right: 1px solid {theme["border"]};
     padding-top: 1.2rem;
+    transition: transform 0.3s ease-in-out;
+}}
+
+[data-testid="stSidebar"][aria-expanded="false"] {{
+    transform: translateX(-100%);
+}}
+
+/* Bouton toggle sidebar (hamburger) */
+.sidebar-toggle {{
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 999999;
+    background: {theme["card"]};
+    border: 1px solid {theme["border"]};
+    color: {theme["text"]};
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    line-height: 1;
+}}
+
+.sidebar-toggle:hover {{
+    background: {theme["surface"]};
+    transform: scale(1.05);
 }}
 
 /* ============================================================
@@ -835,6 +868,22 @@ footer {{visibility: hidden;}}
     margin-bottom: 12px;
 }}
 </style>
+""", unsafe_allow_html=True)
+
+# Bouton hamburger pour toggle le sidebar (affiché en haut à gauche)
+st.markdown("""
+<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+    ☰
+</button>
+<script>
+function toggleSidebar() {
+    const sidebar = document.querySelector('[data-testid="stSidebar"]');
+    if (sidebar) {
+        const isOpen = sidebar.getAttribute('aria-expanded') === 'true';
+        sidebar.setAttribute('aria-expanded', !isOpen);
+    }
+}
+</script>
 """, unsafe_allow_html=True)
 
 # ============================================================================
