@@ -530,17 +530,33 @@ html, body, [class*="css"] {{
     padding-top: 1.2rem;
 }}
 
+/* Suppression du bandeau de navigation en haut */
+header[data-testid="stHeader"] {{
+    display: none;
+}}
+
+/* Ajustement du padding pour compenser la suppression du header */
+[data-testid="stAppViewBlockContainer"] {{
+    padding-top: 0rem;
+}}
+
+/* Pour laisser de l'espace en haut */
+.main > div {{
+    padding-top: 1rem;
+}}
+
 .brand-title {{
-    font-size: 1.4rem;
+    font-size: 1.8rem;
     font-weight: 700;
     letter-spacing: -0.02em;
     color: {COLORS["accent"]};
+    margin-bottom: 0.2rem;
 }}
 .brand-subtitle {{
     color: {theme["muted"]};
-    font-size: 0.8rem;
-    margin-top: 2px;
+    font-size: 0.9rem;
     font-weight: 400;
+    margin-bottom: 1.2rem;
 }}
 .brand-separator {{
     border: none;
@@ -660,7 +676,7 @@ html, body, [class*="css"] {{
 }}
 
 .page-title {{
-    font-size: 1.8rem;
+    font-size: 2rem;
     font-weight: 700;
     color: {theme["text"]};
     letter-spacing: -0.02em;
@@ -1040,7 +1056,6 @@ def display_insights_section(insights, lang):
     }
     lbls = en_labels if lang == "EN" else labels
 
-    # Determine border color for each section
     border_colors = [COLORS["accent"], COLORS["accent2"], COLORS["negative"], COLORS["positive"]]
     
     col1, col2 = st.columns(2)
