@@ -91,35 +91,36 @@ def display_subtabs():
 
 
 def display_insights_section(insights, lang):
-    """Affiche les insights structures en 4 sections."""
-    labels = {
-        "ce_qui_sest_passe": "Ce qui s'est passe",
-        "pourquoi": "Pourquoi (causes)",
-        "attention": "Ce qui merite votre attention",
-        "recommandations": "Recommandations"
+    labels_fr = {
+        "ce_qui_sest_passe": "Ce qui s'est passé",
+        "pourquoi": "Pourquoi",
+        "attention": "Ce qui mérite votre attention",
+        "recommandations": "Ce que vous devriez faire",
     }
-    en_labels = {
+    labels_en = {
         "ce_qui_sest_passe": "What happened",
-        "pourquoi": "Why (causes)",
-        "attention": "What needs your attention",
-        "recommandations": "Recommendations"
+        "pourquoi": "Why",
+        "attention": "What deserves your attention",
+        "recommandations": "What you should do",
     }
-    lbls = en_labels if lang == "EN" else labels
-
+    lbls = labels_en if lang == "EN" else labels_fr
+    ordered_keys = ["ce_qui_sest_passe", "pourquoi", "attention", "recommandations"]
     border_colors = [COLORS["accent"], COLORS["accent2"], COLORS["negative"], COLORS["positive"]]
 
-    col1, col2 = st.columns(2)
-    for idx, (key, items) in enumerate(insights.items()):
-        if items:
-            col = col1 if idx % 2 == 0 else col2
-            border_color = border_colors[idx % len(border_colors)]
-            with col:
-                st.markdown(f"""
-                <div class="insight-card" style="border-left-color: {border_color};">
-                    <div class="insight-title">{lbls.get(key, key)}</div>
-                    <div class="insight-body">{'<br>• '.join(items)}</div>
-                </div>
-                """, unsafe_allow_html=True)
+    step = 1
+    for key in ordered_keys:
+        items = insights.get(key)
+        if not items:
+            continue
+        border_color = border_colors[(step - 1) % len(border_colors)]
+        body = "".join(f"<div>• {item}</div>" for item in items)
+        st.markdown(f"""
+        <div class="insight-card" style="border-left-color: {border_color};">
+            <div class="insight-title">{step}. {lbls.get(key, key)}</div>
+            <div class="insight-body">{body}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        step += 1
 
 
 def display_problems_section(problems, lang):
