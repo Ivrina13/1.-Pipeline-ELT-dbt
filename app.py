@@ -11,10 +11,10 @@ from ui.i18n import t
 from ui.theme import init_theme_state, get_theme, inject_css
 from core.store import load_data, get_reference_date
 from core.transform import apply_filters
-from pages.ventes import display_sales_market
-from pages.logistique import display_logistics_satisfaction
-from pages.vendeurs import display_sellers_payments
-from pages.clients import display_customers_rfm
+from sections.ventes import display_sales_market
+from sections.logistique import display_logistics_satisfaction
+from sections.vendeurs import display_sellers_payments
+from sections.clients import display_customers_rfm
 
 # ============================================================================
 # CONFIGURATION
