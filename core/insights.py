@@ -157,21 +157,28 @@ def _insights_logistics(valid: pd.DataFrame, insights: dict) -> None:
 
 
 def _insights_sellers(valid: pd.DataFrame, insights: dict) -> None:
-    if "seller_id" not in valid.columns or "price" not in valid.columns:
+    if "seller_id" not in valid.columns:
         return
+
+    seller_ids = valid["seller_id"].dropna()
+    if seller_ids.empty:
+        return
+    n_sellers = seller_ids.nunique()
+    insights["ce_qui_sest_passe"].append(f"Marketplace: {n_sellers:,} vendeurs actifs.")
+
+    if "price" not in valid.columns:
+        return  # pas de donnees de CA disponibles pour aller plus loin sur ce domaine
 
     rev_by_seller = valid.groupby("seller_id")["price"].sum().sort_values(ascending=False)
     total = rev_by_seller.sum()
-    n_sellers = rev_by_seller.shape[0]
-    if total == 0 or n_sellers == 0:
+    if total == 0 or rev_by_seller.empty:
         return
 
-    insights["ce_qui_sest_passe"].append(f"Marketplace: {n_sellers:,} vendeurs actifs.")
     insights["ce_qui_sest_passe"].append(
         f"Vendeur en tete: {str(rev_by_seller.index[0])[:14]} ({rev_by_seller.iloc[0]:,.0f} R$)."
     )
 
-    top10_n = max(1, int(np.ceil(n_sellers * 0.1)))
+    top10_n = max(1, int(np.ceil(len(rev_by_seller) * 0.1)))
     top10_share = rev_by_seller.iloc[:top10_n].sum() / total * 100
     insights["ce_qui_sest_passe"].append(f"Les 10% de vendeurs generent {top10_share:.1f}% du CA.")
 
@@ -280,6 +287,14 @@ def generate_insights(df: pd.DataFrame, lang: str, domain: str = "general") -> d
     if not insights["pourquoi"] and insights["ce_qui_sest_passe"]:
         insights["pourquoi"].append(
             "Aucune cause majeure identifiee automatiquement sur cette periode."
+        )
+    if not insights["attention"] and insights["ce_qui_sest_passe"]:
+        insights["attention"].append(
+            "Rien d'anormal detecte sur cette periode."
+        )
+    if not insights["recommandations"] and insights["ce_qui_sest_passe"]:
+        insights["recommandations"].append(
+            "Aucune action prioritaire identifiee pour le moment."
         )
     if not insights["ce_qui_sest_passe"]:
         insights["ce_qui_sest_passe"].append("Donnees insuffisantes pour l'analyse.")
