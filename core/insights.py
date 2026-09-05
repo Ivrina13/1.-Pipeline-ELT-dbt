@@ -25,6 +25,7 @@ def generate_insights(df: pd.DataFrame, lang: str, domain: str = "general") -> d
     valid = df[df["price"] > 0] if "price" in df.columns else df
 
     # --- CE QUI S'EST PASSE ---
+    monthly = None
     if "price" in valid.columns and not valid.empty:
         total_rev = valid["price"].sum()
         n_orders = valid["order_id"].nunique()
@@ -63,6 +64,43 @@ def generate_insights(df: pd.DataFrame, lang: str, domain: str = "general") -> d
         )
 
     # --- POURQUOI (causes) ---
+
+    # Explication de la variation de CA (nouveau) : identifie la categorie
+    # ou l'Etat qui contribue le plus a la hausse/baisse du mois.
+    if monthly is not None and len(monthly) > 1 and "purchased_at" in valid.columns:
+        last_period = monthly.index[-1]
+        prev_period = monthly.index[-2]
+        diff = monthly.iloc[-1] - monthly.iloc[-2]
+        base = monthly.iloc[-2]
+        if base and abs(diff) / base > 0.03:  # variation significative (>3%)
+            group_col = None
+            if "product_category" in valid.columns:
+                group_col = "product_category"
+            elif "customer_state" in valid.columns:
+                group_col = "customer_state"
+
+            if group_col:
+                periods = valid["purchased_at"].dt.to_period("M")
+                last_by_group = valid[periods == last_period].groupby(group_col)["price"].sum()
+                prev_by_group = valid[periods == prev_period].groupby(group_col)["price"].sum()
+                delta_by_group = last_by_group.subtract(prev_by_group, fill_value=0).sort_values()
+
+                if not delta_by_group.empty:
+                    if diff < 0:
+                        top_contributor = delta_by_group.index[0]
+                        contributor_delta = delta_by_group.iloc[0]
+                        insights["pourquoi"].append(
+                            f"La baisse du CA s'explique en grande partie par '{top_contributor}' "
+                            f"({contributor_delta:,.0f} R$ de variation sur le mois)."
+                        )
+                    else:
+                        top_contributor = delta_by_group.index[-1]
+                        contributor_delta = delta_by_group.iloc[-1]
+                        insights["pourquoi"].append(
+                            f"La hausse du CA est en grande partie tiree par '{top_contributor}' "
+                            f"(+{contributor_delta:,.0f} R$ sur le mois)."
+                        )
+
     if "is_late" in valid.columns and valid["is_late"].mean() > 0.1:
         if "customer_state" in valid.columns:
             by_state = valid.groupby("customer_state")["is_late"].mean().sort_values(ascending=False)
@@ -84,6 +122,14 @@ def generate_insights(df: pd.DataFrame, lang: str, domain: str = "general") -> d
                 insights["pourquoi"].append(
                     f"La categorie '{by_cat.index[0]}' a la note la plus basse ({by_cat.iloc[0]:.2f}/5)."
                 )
+
+    # Filet de securite : si des faits notables ont ete detectes mais qu'aucune
+    # cause n'a pu etre identifiee automatiquement, on le dit explicitement
+    # plutot que de masquer silencieusement le bloc.
+    if not insights["pourquoi"] and insights["ce_qui_sest_passe"]:
+        insights["pourquoi"].append(
+            "Aucune cause majeure identifiee automatiquement sur cette periode."
+        )
 
     # --- ATTENTION (anomalies, risques, opportunites) ---
     if "seller_id" in valid.columns and "price" in valid.columns:
